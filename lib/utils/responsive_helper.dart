@@ -22,8 +22,9 @@ class ResponsiveHelper {
       BuildContext context, double baseFontSize) {
     final width = MediaQuery.of(context).size.width;
     if (width < 360) return baseFontSize * 0.9; // Small phones
-    if (width >= mobileMaxWidth && width < tabletMaxWidth)
+    if (width >= mobileMaxWidth && width < tabletMaxWidth) {
       return baseFontSize * 1.15; // Tablets
+    }
     if (width >= tabletMaxWidth) return baseFontSize * 1.2; // Desktop
     return baseFontSize;
   }
