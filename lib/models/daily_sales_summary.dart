@@ -9,6 +9,8 @@ class DailySalesSummary {
   final String? phone;
   final double tqty;
   final double net;
+  final double totalProfit;
+  final double totalLoss;
 
   DailySalesSummary({
     required this.billdate,
@@ -21,6 +23,8 @@ class DailySalesSummary {
     this.phone,
     required this.tqty,
     required this.net,
+    this.totalProfit = 0.0,
+    this.totalLoss = 0.0,
   });
 
   factory DailySalesSummary.fromJson(Map<String, dynamic> json) {
@@ -35,6 +39,8 @@ class DailySalesSummary {
       phone: json['phone'],
       tqty: (json['tqty'] as num).toDouble(),
       net: (json['net'] as num).toDouble(),
+      totalProfit: (json['total_profit'] as num?)?.toDouble() ?? 0.0,
+      totalLoss: (json['total_loss'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -50,6 +56,8 @@ class DailySalesSummary {
       'phone': phone,
       'tqty': tqty,
       'net': net,
+      'total_profit': totalProfit,
+      'total_loss': totalLoss,
     };
   }
 
@@ -71,5 +79,21 @@ class DailySalesSummary {
 
   String get displayName {
     return cusnam ?? 'Customer $cuscod';
+  }
+
+  String get formattedTotalProfit {
+    return totalProfit.toStringAsFixed(2);
+  }
+
+  String get formattedTotalLoss {
+    return totalLoss.toStringAsFixed(2);
+  }
+
+  bool get isProfitable {
+    return totalProfit > 0;
+  }
+
+  bool get hasLoss {
+    return totalLoss > 0;
   }
 }

@@ -256,6 +256,10 @@ class _DailySalesScreenState extends ConsumerState<DailySalesScreen> {
 
   Widget _buildSalesCard(
       DailySalesSummary sale, double screenWidth, double screenHeight) {
+    final authState = ref.watch(authProvider);
+    final userRole = authState.user?['role'] as String?;
+    final isAdmin = userRole == 'admin';
+
     return Container(
       margin: EdgeInsets.only(bottom: screenHeight * 0.015),
       decoration: BoxDecoration(
@@ -437,63 +441,93 @@ class _DailySalesScreenState extends ConsumerState<DailySalesScreen> {
                 Divider(color: Colors.grey[300], thickness: 1),
                 const SizedBox(height: 10),
 
-                // Footer with quantity and tap hint
+                // Footer with profit and loss (admin only)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.orange[50],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.inventory_2_outlined,
-                              size: 18, color: Colors.orange[700]),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Qty: ${sale.tqty.toStringAsFixed(0)}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.orange[700],
-                              fontWeight: FontWeight.w600,
+                    if (isAdmin && sale.isProfitable)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.green[50],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.trending_up,
+                                size: 18, color: Colors.green[700]),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Profit: ${sale.formattedTotalProfit}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.green[700],
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
+                    if (isAdmin && sale.hasLoss)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.red[50],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.trending_down,
+                                size: 18, color: Colors.red[700]),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Loss: ${sale.formattedTotalLoss}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.red[700],
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      decoration: const BoxDecoration(
-                        color: Color.fromRGBO(102, 126, 234, 0.1),
-                        borderRadius: BorderRadius.all(Radius.circular(8)),
-                      ),
-                      child: const Row(
-                        children: [
-                          Text(
-                            'View Details',
-                            style: TextStyle(
-                              fontSize: 13,
+                    if (!isAdmin) ...[
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: const BoxDecoration(
+                          color: Color.fromRGBO(102, 126, 234, 0.1),
+                          borderRadius: BorderRadius.all(Radius.circular(8)),
+                        ),
+                        child: const Row(
+                          children: [
+                            Text(
+                              'View Details',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFF667eea),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            SizedBox(width: 4),
+                            Icon(
+                              Icons.arrow_forward_ios,
+                              size: 12,
                               color: Color(0xFF667eea),
-                              fontWeight: FontWeight.w600,
                             ),
-                          ),
-                          SizedBox(width: 4),
-                          Icon(
-                            Icons.arrow_forward_ios,
-                            size: 12,
-                            color: Color(0xFF667eea),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ],

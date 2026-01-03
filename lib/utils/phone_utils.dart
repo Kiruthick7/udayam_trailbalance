@@ -62,7 +62,8 @@ class PhoneUtils {
     } else {
       // Multiple numbers - format each
       return numbers
-          .map((num) => '+91 ${num.substring(0, 5)} ${num.substring(5)}')
+          .map((number) =>
+              '+91 ${number.substring(0, 5)} ${number.substring(5)}')
           .join(' / ');
     }
 

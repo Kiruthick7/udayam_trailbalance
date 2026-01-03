@@ -3,6 +3,7 @@ import '../services/storage_service.dart';
 import '../main.dart';
 import '../screens/login_screen.dart';
 import 'package:flutter/material.dart';
+import 'dart:convert';
 
 class AuthInterceptor extends Interceptor {
   final Dio dio;
@@ -16,11 +17,77 @@ class AuthInterceptor extends Interceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
+    // Check and refresh token before making the request
+    if (!options.path.contains('/auth/login') &&
+        !options.path.contains('/auth/refresh')) {
+      await _checkAndRefreshTokenIfNeeded();
+    }
+
     final token = await StorageService.getAccessToken();
     if (token != null) {
       options.headers['Authorization'] = 'Bearer $token';
     }
     handler.next(options);
+  }
+
+  /// Check if token needs refresh before making request
+  Future<void> _checkAndRefreshTokenIfNeeded() async {
+    if (_isRefreshing) return;
+
+    try {
+      final accessToken = await StorageService.getAccessToken();
+      if (accessToken == null) return;
+
+      // Decode JWT to check if expiring within 2 minutes
+      if (_isTokenExpiringSoon(accessToken)) {
+        final refreshToken = await StorageService.getRefreshToken();
+        if (refreshToken == null) return;
+
+        _isRefreshing = true;
+
+        final response = await dio.post(
+          '/auth/refresh',
+          data: {'refresh_token': refreshToken},
+          options: Options(headers: {'Authorization': null}),
+        );
+
+        await StorageService.saveTokens(
+          accessToken: response.data['access_token'],
+          refreshToken: response.data['refresh_token'],
+        );
+
+        _isRefreshing = false;
+      }
+    } catch (e) {
+      _isRefreshing = false;
+    }
+  }
+
+  /// Check if token is expiring within 2 minutes
+  bool _isTokenExpiringSoon(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return true;
+
+      final payload = parts[1];
+      final normalized = payload.padRight(
+        (payload.length + 3) ~/ 4 * 4,
+        '=',
+      );
+      final decoded = utf8.decode(base64.decode(normalized));
+      final payloadMap = json.decode(decoded) as Map<String, dynamic>;
+
+      final exp = payloadMap['exp'] as int?;
+      if (exp == null) return true;
+
+      final expiryDate = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+      final now = DateTime.now();
+
+      // Refresh if expiring within 2 minutes
+      return expiryDate.isBefore(now.add(const Duration(minutes: 2)));
+    } catch (e) {
+      return false;
+    }
   }
 
   @override
