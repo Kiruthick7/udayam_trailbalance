@@ -36,6 +36,16 @@ class ApiService {
     return response.data;
   }
 
+  Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
+    final response = await _dio.post(
+      '/auth/refresh',
+      data: {'refresh_token': refreshToken},
+      options: Options(headers: {'Authorization': null}),
+    );
+
+    return response.data;
+  }
+
   Future<List<Company>> getCompanies() async {
     final response = await _dio.get('/api/companies');
     return (response.data as List).map((e) => Company.fromJson(e)).toList();
@@ -85,6 +95,15 @@ class ApiService {
     return (response.data as List)
         .map((e) => DailySalesSummary.fromJson(e))
         .toList();
+  }
+
+  Future<Map<String, double>> getProfitLoss() async {
+    final response = await _dio.get('/api/profit-loss');
+
+    return {
+      'total_profit': (response.data['total_profit'] as num).toDouble(),
+      'total_loss': (response.data['total_loss'] as num).toDouble(),
+    };
   }
 
   Future<List<SalesDetail>> getSalesDetails(

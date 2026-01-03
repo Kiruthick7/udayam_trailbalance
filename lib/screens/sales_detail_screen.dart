@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/sales_detail_provider.dart';
 import '../providers/auth_provider.dart';
 import '../utils/phone_utils.dart';
@@ -75,27 +76,14 @@ class _SalesDetailScreenState extends ConsumerState<SalesDetailScreen> {
             IconButton(
               icon: const Icon(Icons.phone),
               tooltip: 'Call Customer',
-              onPressed: () async {
-                final scaffoldMessenger = ScaffoldMessenger.of(context);
-                final success =
-                    await PhoneUtils.makePhoneCall(state.customerPhone!);
-                if (!success) {
-                  scaffoldMessenger.showSnackBar(
-                    const SnackBar(
-                      content: Text('Could not launch phone dialer'),
-                      backgroundColor: Colors.red,
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                }
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.picture_as_pdf),
-              tooltip: 'Send PDF via WhatsApp',
-              onPressed: () => _generateAndSharePDF(state),
+              onPressed: () => _handlePhoneCall(state.customerPhone!),
             ),
           ],
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf),
+            tooltip: 'Send PDF via WhatsApp',
+            onPressed: () => _generateAndSharePDF(state),
+          ),
         ],
       ),
       body: state.isLoading
@@ -159,13 +147,7 @@ class _SalesDetailScreenState extends ConsumerState<SalesDetailScreen> {
 
   Widget _buildContactAvatar(String name, String phone) {
     return InkWell(
-      onTap: () async {
-        final success = await PhoneUtils.makePhoneCall(phone);
-        if (!success && mounted) {
-          DialogUtils.showErrorSnackbar(
-              context, 'Could not launch phone dialer');
-        }
-      },
+      onTap: () => _handlePhoneCall(phone),
       borderRadius: BorderRadius.circular(8),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -200,7 +182,7 @@ class _SalesDetailScreenState extends ConsumerState<SalesDetailScreen> {
         side: BorderSide(color: Colors.grey[200]!, width: 1),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -208,10 +190,10 @@ class _SalesDetailScreenState extends ConsumerState<SalesDetailScreen> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: state.details.length,
-              separatorBuilder: (context, index) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child:
-                    Divider(height: 1, thickness: 1, color: Colors.grey[200]),
+              separatorBuilder: (context, index) => Divider(
+                height: 16,
+                thickness: 1,
+                color: Colors.grey[200],
               ),
               itemBuilder: (context, index) {
                 final item = state.details[index];
@@ -257,7 +239,7 @@ class _SalesDetailScreenState extends ConsumerState<SalesDetailScreen> {
             // const SizedBox(width: 4),
             // Rate
             Expanded(
-              flex: 2,
+              flex: 4,
               child: CommonWidgets.buildInfoChip(
                 label: 'Rate',
                 value: FormatUtils.formatDecimal(item.rate),
@@ -440,6 +422,322 @@ class _SalesDetailScreenState extends ConsumerState<SalesDetailScreen> {
         ),
       ),
     );
+  }
+
+  /// Handle phone call with support for multiple numbers
+  Future<void> _handlePhoneCall(String phoneString) async {
+    final numbers = PhoneUtils.extractPhoneNumbers(phoneString);
+
+    if (numbers.isEmpty) {
+      if (mounted) {
+        DialogUtils.showErrorSnackbar(
+          context,
+          'No valid phone number found',
+        );
+      }
+      return;
+    }
+
+    if (numbers.length == 1) {
+      // Single number - show confirmation dialog with call button
+      if (!mounted) return;
+
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.phone,
+                    size: 40,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Call Customer',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  '+91 ${numbers[0].substring(0, 5)} ${numbers[0].substring(5)}',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          side: BorderSide(color: Colors.grey[400]!),
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => Navigator.pop(context, true),
+                        icon: const Icon(Icons.phone),
+                        label: const Text(
+                          'Call',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      if (confirmed == true) {
+        final success = await PhoneUtils.makePhoneCall(phoneString);
+        if (!success && mounted) {
+          DialogUtils.showErrorSnackbar(
+            context,
+            'Could not launch phone dialer',
+          );
+        }
+      }
+    } else {
+      // Multiple numbers - show enhanced selection dialog
+      if (!mounted) return;
+
+      final selectedNumber = await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          elevation: 8,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white,
+                  Colors.grey[50]!,
+                ],
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF667eea)
+                                  .withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.phone_in_talk_rounded,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Select Number',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            Text(
+                              '${numbers.length} phone numbers found',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  // Phone numbers list
+                  Container(
+                    constraints: const BoxConstraints(maxHeight: 320),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey[200]!),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        padding: EdgeInsets.zero,
+                        itemCount: numbers.length,
+                        separatorBuilder: (context, index) => Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: Colors.grey[200],
+                          indent: 70,
+                        ),
+                        itemBuilder: (context, index) {
+                          final number = numbers[index];
+                          return Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => Navigator.pop(context, number),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                  horizontal: 16,
+                                ),
+                                child: Row(
+                                  children: [
+                                    // Number details
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            '+91$number',
+                                            style: const TextStyle(
+                                              fontSize: 17,
+                                              fontWeight: FontWeight.w700,
+                                              letterSpacing: 0.5,
+                                              height: 1.2,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.visible,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    // Arrow indicator
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[100],
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Icon(
+                                        Icons.phone_forwarded,
+                                        size: 18,
+                                        color: Color(0xFF667eea),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  // Cancel button
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close, size: 20),
+                      label: const Text(
+                        'Cancel',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        side: BorderSide(color: Colors.grey[300]!, width: 1.5),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      if (selectedNumber != null) {
+        final Uri phoneUri = Uri(scheme: 'tel', path: '+91$selectedNumber');
+        final success = await launchUrl(phoneUri);
+        if (!success && mounted) {
+          DialogUtils.showErrorSnackbar(
+            context,
+            'Could not launch phone dialer',
+          );
+        }
+      }
+    }
   }
 
   Future<void> _generateAndSharePDF(SalesDetailState state) async {

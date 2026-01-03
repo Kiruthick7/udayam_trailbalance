@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/daily_sales_provider.dart';
+import '../providers/auth_provider.dart';
 import '../models/daily_sales_summary.dart';
 import '../widgets/error_snackbar.dart';
 import 'sales_detail_screen.dart';
@@ -130,52 +131,94 @@ class _DailySalesScreenState extends ConsumerState<DailySalesScreen> {
   }
 
   Widget _buildSummaryCard(DailySalesState state, double screenWidth) {
+    final authState = ref.watch(authProvider);
+    final userRole = authState.user?['role'] as String?;
+    final isAdmin = userRole == 'admin';
+
     return Container(
-      margin: EdgeInsets.all(screenWidth * 0.04),
-      padding: EdgeInsets.all(screenWidth * 0.05),
+      margin: EdgeInsets.symmetric(
+        horizontal: screenWidth * 0.04,
+        vertical: screenWidth * 0.02,
+      ),
+      padding: EdgeInsets.symmetric(
+        horizontal: screenWidth * 0.04,
+        vertical: screenWidth * 0.03,
+      ),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFF667eea), Color(0xFF764ba2)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF667eea).withValues(alpha: 0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+      child: Column(
         children: [
-          _buildSummaryItem(
-            icon: Icons.receipt_long,
-            label: 'Orders',
-            value: '${state.salesList.length}',
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildSummaryItem(
+                icon: Icons.receipt_long,
+                label: 'Bills',
+                value: '${state.salesList.length}',
+              ),
+              Container(
+                width: 1,
+                height: 35,
+                color: Colors.white.withValues(alpha: 0.3),
+              ),
+              _buildSummaryItem(
+                icon: Icons.inventory_2_outlined,
+                label: 'Quantity',
+                value: state.totalQuantity.toStringAsFixed(0),
+              ),
+              Container(
+                width: 1,
+                height: 35,
+                color: Colors.white.withValues(alpha: 0.3),
+              ),
+              _buildSummaryItem(
+                icon: Icons.currency_rupee,
+                label: 'Amount',
+                value: state.totalNetAmount.toStringAsFixed(0),
+              ),
+            ],
           ),
-          Container(
-            width: 1,
-            height: 50,
-            color: Colors.white.withValues(alpha: 0.3),
-          ),
-          _buildSummaryItem(
-            icon: Icons.inventory_2_outlined,
-            label: 'Quantity',
-            value: state.totalQuantity.toStringAsFixed(0),
-          ),
-          Container(
-            width: 1,
-            height: 50,
-            color: Colors.white.withValues(alpha: 0.3),
-          ),
-          _buildSummaryItem(
-            icon: Icons.currency_rupee,
-            label: 'Amount',
-            value: state.totalNetAmount.toStringAsFixed(0),
-          ),
+          if (isAdmin && (state.totalProfit > 0 || state.totalLoss > 0)) ...[
+            const SizedBox(height: 10),
+            Container(
+              height: 1,
+              color: Colors.white.withValues(alpha: 0.3),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildSummaryItem(
+                  icon: Icons.trending_up,
+                  label: 'Total Profit',
+                  value: state.formattedTotalProfit,
+                ),
+                Container(
+                  width: 1,
+                  height: 35,
+                  color: Colors.white.withValues(alpha: 0.3),
+                ),
+                _buildSummaryItem(
+                  icon: Icons.trending_down,
+                  label: 'Total Loss',
+                  value: state.formattedTotalLoss,
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -189,20 +232,11 @@ class _DailySalesScreenState extends ConsumerState<DailySalesScreen> {
     return Expanded(
       child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: Colors.white, size: 28),
-          ),
-          const SizedBox(height: 8),
           Text(
             label,
             style: const TextStyle(
               color: Colors.white70,
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -211,7 +245,7 @@ class _DailySalesScreenState extends ConsumerState<DailySalesScreen> {
             value,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 18,
+              fontSize: 15,
               fontWeight: FontWeight.bold,
             ),
           ),

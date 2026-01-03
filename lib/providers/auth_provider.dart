@@ -94,6 +94,27 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
     }
   }
+
+  /// REFRESH TOKEN (silent, without changing state)
+  Future<bool> refreshToken() async {
+    try {
+      final refreshToken = await StorageService.getRefreshToken();
+      if (refreshToken == null) return false;
+
+      final data = await api.refreshToken(refreshToken);
+
+      await StorageService.saveTokens(
+        accessToken: data['access_token'],
+        refreshToken: data['refresh_token'],
+      );
+
+      return true;
+    } catch (e) {
+      // Token refresh failed - logout
+      await logout();
+      return false;
+    }
+  }
 }
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {

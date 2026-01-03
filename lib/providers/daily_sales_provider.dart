@@ -9,22 +9,30 @@ class DailySalesState {
   final List<DailySalesSummary> salesList;
   final bool isLoading;
   final String? error;
+  final double totalProfit;
+  final double totalLoss;
 
   const DailySalesState({
     this.salesList = const [],
     this.isLoading = false,
     this.error,
+    this.totalProfit = 0.0,
+    this.totalLoss = 0.0,
   });
 
   DailySalesState copyWith({
     List<DailySalesSummary>? salesList,
     bool? isLoading,
     String? error,
+    double? totalProfit,
+    double? totalLoss,
   }) {
     return DailySalesState(
       salesList: salesList ?? this.salesList,
       isLoading: isLoading ?? this.isLoading,
       error: error,
+      totalProfit: totalProfit ?? this.totalProfit,
+      totalLoss: totalLoss ?? this.totalLoss,
     );
   }
 
@@ -41,6 +49,14 @@ class DailySalesState {
   String get formattedTotalNet {
     return totalNetAmount.toStringAsFixed(2);
   }
+
+  String get formattedTotalProfit {
+    return totalProfit.toStringAsFixed(2);
+  }
+
+  String get formattedTotalLoss {
+    return totalLoss.toStringAsFixed(2);
+  }
 }
 
 // StateNotifier for daily sales summary
@@ -55,9 +71,19 @@ class DailySalesNotifier extends StateNotifier<DailySalesState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final salesList = await _apiService.getCurrentDayCustomerSales();
+      // Fetch both sales list and profit/loss data in parallel
+      final results = await Future.wait([
+        _apiService.getCurrentDayCustomerSales(),
+        _apiService.getProfitLoss(),
+      ]);
+
+      final salesList = results[0] as List<DailySalesSummary>;
+      final profitLoss = results[1] as Map<String, double>;
+
       state = state.copyWith(
         salesList: salesList,
+        totalProfit: profitLoss['total_profit'] ?? 0.0,
+        totalLoss: profitLoss['total_loss'] ?? 0.0,
         isLoading: false,
       );
     } catch (e) {

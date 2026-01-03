@@ -328,7 +328,7 @@ class _TrialBalanceScreenState extends ConsumerState<TrialBalanceScreen>
           ),
           if (!state.isLoading && state.reports.isNotEmpty)
             IconButton(
-              icon: Icon(Icons.download,
+              icon: Icon(Icons.share,
                   size: ResponsiveHelper.getResponsiveIconSize(context, 24)),
               onPressed: _showExportOptions,
               tooltip: 'Export Report',
