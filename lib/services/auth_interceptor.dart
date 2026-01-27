@@ -86,7 +86,8 @@ class AuthInterceptor extends Interceptor {
       // Refresh if expiring within 2 minutes
       return expiryDate.isBefore(now.add(const Duration(minutes: 2)));
     } catch (e) {
-      return false;
+      // If decoding fails, assume token is expiring to trigger refresh
+      return true;
     }
   }
 

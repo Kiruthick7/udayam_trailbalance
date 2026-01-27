@@ -89,21 +89,34 @@ class ApiService {
         .toList();
   }
 
-  Future<List<DailySalesSummary>> getCurrentDayCustomerSales() async {
-    final response = await _dio.get('/api/current-day-customer-sales');
+  Future<List<DailySalesSummary>> getCurrentDayCustomerSales(
+      [DateTime? date]) async {
+    final queryParams = date != null ? {'date': _formatDate(date)} : null;
+    final response = await _dio.get(
+      '/api/current-day-customer-sales',
+      queryParameters: queryParams,
+    );
 
     return (response.data as List)
         .map((e) => DailySalesSummary.fromJson(e))
         .toList();
   }
 
-  Future<Map<String, double>> getProfitLoss() async {
-    final response = await _dio.get('/api/profit-loss');
+  Future<Map<String, double>> getProfitLoss([DateTime? date]) async {
+    final queryParams = date != null ? {'date': _formatDate(date)} : null;
+    final response = await _dio.get(
+      '/api/profit-loss',
+      queryParameters: queryParams,
+    );
 
     return {
       'total_profit': (response.data['total_profit'] as num).toDouble(),
       'total_loss': (response.data['total_loss'] as num).toDouble(),
     };
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
   Future<List<SalesDetail>> getSalesDetails(

@@ -46,145 +46,152 @@ class HomeScreen extends ConsumerWidget {
           ),
         ),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Welcome Section
-                Card(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundColor: Colors.blue[700],
-                          child: Text(
-                            (authState.user?['USERNAME'] as String?)
-                                    ?.substring(0, 1)
-                                    .toUpperCase() ??
-                                (authState.user?['email'] as String?)
-                                    ?.substring(0, 1)
-                                    .toUpperCase() ??
-                                'U',
-                            style: const TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Welcome back!',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                authState.user?['username'] ??
-                                    authState.user?['email'] ??
-                                    '',
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: userRole == 'admin'
-                                      ? Colors.purple[100]
-                                      : Colors.blue[100],
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  userRole?.toUpperCase() ?? 'USER',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: userRole == 'admin'
-                                        ? Colors.purple[900]
-                                        : Colors.blue[900],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 32),
-
-                // Menu Section
-                Text(
-                  'Quick Access',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Menu Items
-                Expanded(
-                  child: ListView(
-                    children: [
-                      // Trial Balance - Only for Admin
-                      if (userRole == 'admin')
-                        _MenuCard(
-                          icon: Icons.account_balance,
-                          title: 'Trial Balance',
-                          subtitle: 'View financial reports and statements',
-                          color: Colors.blue[700]!,
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const CompanySelectionScreen(),
-                              ),
-                            );
-                          },
-                        ),
-
-                      if (userRole == 'admin') const SizedBox(height: 16),
-
-                      // Daily Sales - For both Admin and Staff
-                      _MenuCard(
-                        icon: Icons.receipt_long,
-                        title: 'Daily Sales Bills',
-                        subtitle: 'View today\'s sales and customer details',
-                        color: Colors.green[700]!,
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const DailySalesScreen(),
-                            ),
-                          );
-                        },
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1200),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Welcome Section
+                    Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                    ],
-                  ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 30,
+                              backgroundColor: Colors.blue[700],
+                              child: Text(
+                                (authState.user?['USERNAME'] as String?)
+                                        ?.substring(0, 1)
+                                        .toUpperCase() ??
+                                    (authState.user?['email'] as String?)
+                                        ?.substring(0, 1)
+                                        .toUpperCase() ??
+                                    'U',
+                                style: const TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Welcome back!',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    authState.user?['username'] ??
+                                        authState.user?['email'] ??
+                                        '',
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: userRole == 'admin'
+                                          ? Colors.purple[100]
+                                          : Colors.blue[100],
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      userRole?.toUpperCase() ?? 'USER',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: userRole == 'admin'
+                                            ? Colors.purple[900]
+                                            : Colors.blue[900],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 32),
+
+                    // Menu Section
+                    Text(
+                      'Quick Access',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Menu Items
+                    Expanded(
+                      child: ListView(
+                        children: [
+                          // Trial Balance - Only for Admin
+                          if (userRole == 'admin')
+                            _MenuCard(
+                              icon: Icons.account_balance,
+                              title: 'Trial Balance',
+                              subtitle: 'View financial reports and statements',
+                              color: Colors.blue[700]!,
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const CompanySelectionScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+
+                          if (userRole == 'admin') const SizedBox(height: 16),
+
+                          // Daily Sales - For both Admin and Staff
+                          _MenuCard(
+                            icon: Icons.receipt_long,
+                            title: 'Daily Sales Bills',
+                            subtitle:
+                                'View today\'s sales and customer details',
+                            color: Colors.green[700]!,
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const DailySalesScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),

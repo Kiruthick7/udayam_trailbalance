@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,8 +9,19 @@ class ConnectivityService {
   // Check current connectivity status
   Future<bool> hasInternetConnection() async {
     try {
+      // First check if connected to network
       final result = await _connectivity.checkConnectivity();
-      return result != ConnectivityResult.none;
+      if (result == ConnectivityResult.none) {
+        return false;
+      }
+
+      // Then verify actual internet connectivity by pinging a reliable host
+      final response = await InternetAddress.lookup('google.com').timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => [],
+      );
+
+      return response.isNotEmpty && response[0].rawAddress.isNotEmpty;
     } catch (e) {
       return false;
     }

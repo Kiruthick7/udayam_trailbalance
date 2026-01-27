@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'screens/splash_screen.dart';
 import 'services/token_refresh_service.dart';
+import 'dart:async';
 
 // Global navigator key for navigation from anywhere (e.g., interceptors)
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -18,14 +19,23 @@ class MyApp extends ConsumerStatefulWidget {
 }
 
 class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
+  Timer? _tokenRefreshTimer;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    // Set up periodic token refresh check every 3 minutes
+    _tokenRefreshTimer = Timer.periodic(
+      const Duration(minutes: 3),
+      (_) => TokenRefreshService.checkAndRefreshToken(),
+    );
   }
 
   @override
   void dispose() {
+    _tokenRefreshTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }

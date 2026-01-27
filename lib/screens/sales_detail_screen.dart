@@ -50,21 +50,13 @@ class _SalesDetailScreenState extends ConsumerState<SalesDetailScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Bill #${widget.billno}',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              'Bill #${widget.billno} - ${FormatUtils.formatDate(widget.billdate)}',
+              style: const TextStyle(fontWeight: FontWeight.w400, fontSize: 12),
             ),
-            if (state.customerName != null && state.customerName!.isNotEmpty)
-              Text(
-                state.customerName!,
-                style:
-                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
-              )
-            else
-              Text(
-                FormatUtils.formatDate(widget.billdate),
-                style:
-                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
-              ),
+            Text(
+              state.customerName!,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            )
           ],
         ),
         backgroundColor: const Color(0xFF667eea),
@@ -86,13 +78,21 @@ class _SalesDetailScreenState extends ConsumerState<SalesDetailScreen> {
           ),
         ],
       ),
-      body: state.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : state.error != null
-              ? _ErrorView(error: state.error!, onRetry: _refresh)
-              : state.details.isEmpty
-                  ? const Center(child: Text('No details available'))
-                  : _buildContent(state, screenWidth),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: screenWidth > 600 ? 1200 : double.infinity,
+          ),
+          child: state.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : state.error != null
+                  ? _ErrorView(error: state.error!, onRetry: _refresh)
+                  : state.details.isEmpty
+                      ? const Center(child: Text('No details available'))
+                      : _buildContent(
+                          state, screenWidth > 600 ? 1200 : screenWidth),
+        ),
+      ),
     );
   }
 
@@ -469,7 +469,7 @@ class _SalesDetailScreenState extends ConsumerState<SalesDetailScreen> {
                 ),
                 const SizedBox(height: 20),
                 const Text(
-                  'Call Customer',
+                  'Call',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,

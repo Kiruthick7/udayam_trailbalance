@@ -67,14 +67,14 @@ class DailySalesNotifier extends StateNotifier<DailySalesState> {
   DailySalesNotifier(this._apiService, this._ref)
       : super(const DailySalesState());
 
-  Future<void> fetchDailySales() async {
+  Future<void> fetchDailySales([DateTime? date]) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       // Fetch both sales list and profit/loss data in parallel
       final results = await Future.wait([
-        _apiService.getCurrentDayCustomerSales(),
-        _apiService.getProfitLoss(),
+        _apiService.getCurrentDayCustomerSales(date),
+        _apiService.getProfitLoss(date),
       ]);
 
       final salesList = results[0] as List<DailySalesSummary>;

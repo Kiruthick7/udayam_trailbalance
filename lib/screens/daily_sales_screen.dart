@@ -15,12 +15,30 @@ class DailySalesScreen extends ConsumerStatefulWidget {
 }
 
 class _DailySalesScreenState extends ConsumerState<DailySalesScreen> {
+  DateTime selectedDate = DateTime.now();
+
   @override
   void initState() {
     super.initState();
     // Fetch sales data when screen loads
-    Future.microtask(
-        () => ref.read(dailySalesProvider.notifier).fetchDailySales());
+    Future.microtask(() =>
+        ref.read(dailySalesProvider.notifier).fetchDailySales(selectedDate));
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      helpText: 'Select Date',
+    );
+    if (picked != null && picked != selectedDate) {
+      setState(() {
+        selectedDate = picked;
+      });
+      ref.read(dailySalesProvider.notifier).fetchDailySales(selectedDate);
+    }
   }
 
   @override
@@ -43,15 +61,15 @@ class _DailySalesScreenState extends ConsumerState<DailySalesScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              "Today's Sales",
-              style: TextStyle(
+            Text(
+              _isToday(selectedDate) ? "Today's Sales" : "Sales Report",
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
             ),
             Text(
-              DateFormat('EEEE, dd MMM yyyy').format(DateTime.now()),
+              DateFormat('EEEE, dd MMM yyyy').format(selectedDate),
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w400,
@@ -61,41 +79,66 @@ class _DailySalesScreenState extends ConsumerState<DailySalesScreen> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.calendar_today),
+            onPressed: () => _selectDate(context),
+            tooltip: 'Select Date',
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
-              ref.read(dailySalesProvider.notifier).fetchDailySales();
+              ref
+                  .read(dailySalesProvider.notifier)
+                  .fetchDailySales(selectedDate);
             },
             tooltip: 'Refresh',
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () =>
-            ref.read(dailySalesProvider.notifier).fetchDailySales(),
-        child: state.isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : state.salesList.isEmpty
-                ? _buildEmptyView()
-                : Column(
-                    children: [
-                      _buildSummaryCard(state, screenWidth),
-                      Expanded(
-                        child: ListView.builder(
-                          padding: EdgeInsets.all(screenWidth * 0.04),
-                          itemCount: state.salesList.length,
-                          itemBuilder: (context, index) {
-                            return _buildSalesCard(
-                              state.salesList[index],
-                              screenWidth,
-                              screenHeight,
-                            );
-                          },
-                        ),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: screenWidth > 600 ? 1200 : double.infinity,
+          ),
+          child: RefreshIndicator(
+            onRefresh: () => ref
+                .read(dailySalesProvider.notifier)
+                .fetchDailySales(selectedDate),
+            child: state.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : state.salesList.isEmpty
+                    ? _buildEmptyView()
+                    : Column(
+                        children: [
+                          _buildSummaryCard(
+                              state, screenWidth > 600 ? 1200 : screenWidth),
+                          Expanded(
+                            child: ListView.builder(
+                              padding: EdgeInsets.all(
+                                  (screenWidth > 600 ? 1200 : screenWidth) *
+                                      0.04),
+                              itemCount: state.salesList.length,
+                              itemBuilder: (context, index) {
+                                return _buildSalesCard(
+                                  state.salesList[index],
+                                  screenWidth > 600 ? 1200 : screenWidth,
+                                  screenHeight,
+                                );
+                              },
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+          ),
+        ),
       ),
     );
+  }
+
+  bool _isToday(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
   }
 
   Widget _buildEmptyView() {
@@ -110,7 +153,7 @@ class _DailySalesScreenState extends ConsumerState<DailySalesScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'No sales today',
+            _isToday(selectedDate) ? 'No sales today' : 'No sales on this date',
             style: TextStyle(
               fontSize: 18,
               color: Colors.grey[600],
@@ -119,7 +162,9 @@ class _DailySalesScreenState extends ConsumerState<DailySalesScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Orders placed today will appear here',
+            _isToday(selectedDate)
+                ? 'Orders placed today will appear here'
+                : 'No orders were placed on this date',
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey[500],
