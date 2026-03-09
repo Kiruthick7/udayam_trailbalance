@@ -4,13 +4,16 @@ set -e
 echo "📦 Starting CI post-clone setup"
 
 # Go to repository root
-cd "$CI_WORKSPACE"
+cd "$(dirname "$0")/.."
+REPO_ROOT=$(pwd)
+
+echo "Repository root: $REPO_ROOT"
 
 # Install Flutter if not available
 if ! command -v flutter >/dev/null 2>&1; then
   echo "Installing Flutter..."
-  git clone https://github.com/flutter/flutter.git --depth 1 -b stable "$CI_WORKSPACE/flutter"
-  export PATH="$CI_WORKSPACE/flutter/bin:$PATH"
+  git clone https://github.com/flutter/flutter.git --depth 1 -b stable "$REPO_ROOT/flutter"
+  export PATH="$REPO_ROOT/flutter/bin:$PATH"
 fi
 
 echo "Flutter version:"
