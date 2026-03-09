@@ -13,6 +13,6 @@ echo "Running flutter pub get"
 flutter pub get
 
 echo "Installing CocoaPods"
-cd ios
+cd ../../ios
 pod install
 cd ..
