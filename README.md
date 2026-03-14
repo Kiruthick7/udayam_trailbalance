@@ -77,13 +77,15 @@ lib/
 ├── models/                      # Data models
 │   ├── company.dart
 │   ├── trial_balance.dart
-│   ├── daily_sales.dart
+│   ├── daily_sales_summary.dart
 │   └── sales_detail.dart
 ├── services/                    # API & storage services
 │   ├── api_service.dart
 │   ├── auth_interceptor.dart
 │   ├── storage_service.dart
-│   └── connectivity_service.dart
+│   ├── connectivity_service.dart
+│   ├── export_services.dart
+│   └── token_refresh_service.dart
 ├── providers/                   # State management (Riverpod)
 │   ├── auth_provider.dart
 │   ├── company_provider.dart
@@ -99,10 +101,11 @@ lib/
 │   ├── daily_sales_screen.dart
 │   └── sales_detail_screen.dart
 ├── widgets/                     # Reusable widgets
-│   ├── date_range_picker.dart
 │   ├── trial_balance_table.dart
 │   ├── error_snackbar.dart
-│   └── common_widgets.dart      # Reusable UI components
+│   ├── common_widgets.dart      # Reusable UI components
+│   ├── responsive_container.dart
+│   └── comparison_view.dart
 └── utils/                       # Utilities
     ├── error_handler.dart
     ├── responsive_helper.dart
@@ -113,7 +116,7 @@ lib/
     ├── share_utils.dart         # File & WhatsApp sharing
     ├── QUICK_REFERENCE.md       # Quick utility lookup
     ├── UTILITY_FUNCTIONS_GUIDE.md # Comprehensive guide
-    └── EXAMPLE_USAGE.dart       # Code examples
+    └── EXAMPLE_USAGE.md         # Code examples
 ```
 
 ## Utility Functions
@@ -184,7 +187,7 @@ Refer to `FLUTTER_PRODUCTION_READINESS_REPORT.md` for complete checklist.
 
 - [Utility Functions Quick Reference](lib/utils/QUICK_REFERENCE.md) - Quick lookup for all utilities
 - [Utility Functions Guide](lib/utils/UTILITY_FUNCTIONS_GUIDE.md) - Comprehensive guide with examples
-- [Utility Usage Examples](lib/utils/EXAMPLE_USAGE.dart) - Code examples for all utilities
+- [Utility Usage Examples](lib/utils/EXAMPLE_USAGE.md) - Code examples for all utilities
 - [AWS Security Guide](AWS_SECURITY_GUIDE.md) - AWS Secrets Manager setup
 - [Production Readiness Report](FLUTTER_PRODUCTION_READINESS_REPORT.md) - Pre-release checklist
 - [Secrets List](SECRETS_LIST.md) - AWS secrets configuration
