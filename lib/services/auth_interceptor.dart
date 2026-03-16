@@ -95,6 +95,23 @@ class AuthInterceptor extends Interceptor {
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     if (err.response?.statusCode == 401) {
       final requestOptions = err.requestOptions;
+      final responseData = err.response?.data;
+      String? serverMessage;
+      if (responseData is Map) {
+        serverMessage = responseData['message'] ??
+            responseData['error'] ??
+            responseData['detail'];
+      } else if (responseData is String) {
+        serverMessage = responseData;
+      }
+
+      // If session invalidated, force logout immediately
+      if (serverMessage != null &&
+          serverMessage.toLowerCase().contains('session invalidated')) {
+        await StorageService.clearAll();
+        _navigateToLogin();
+        return handler.next(err);
+      }
 
       // Skip refresh for auth endpoints
       if (requestOptions.path.contains('/auth/login') ||

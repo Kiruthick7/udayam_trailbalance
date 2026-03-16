@@ -11,13 +11,11 @@ class ShareUtils {
     String? subject,
     BuildContext? context,
   }) async {
-    final box = context?.findRenderObject() as RenderBox?;
-
-    await Share.share(
-      text,
-      subject: subject,
-      sharePositionOrigin:
-          box != null ? (box.localToGlobal(Offset.zero) & box.size) : null,
+    await SharePlus.instance.share(
+      ShareParams(
+        text: text,
+        subject: subject,
+      ),
     );
   }
 
@@ -29,11 +27,13 @@ class ShareUtils {
   }) async {
     final box = context?.findRenderObject() as RenderBox?;
 
-    await Share.shareXFiles(
-      [XFile(filePath)],
-      text: text,
-      sharePositionOrigin:
-          box != null ? (box.localToGlobal(Offset.zero) & box.size) : null,
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(filePath)],
+        text: text,
+        sharePositionOrigin:
+            box != null ? (box.localToGlobal(Offset.zero) & box.size) : null,
+      ),
     );
   }
 
@@ -45,11 +45,13 @@ class ShareUtils {
   }) async {
     final box = context?.findRenderObject() as RenderBox?;
 
-    await Share.shareXFiles(
-      filePaths.map((path) => XFile(path)).toList(),
-      text: text,
-      sharePositionOrigin:
-          box != null ? (box.localToGlobal(Offset.zero) & box.size) : null,
+    await SharePlus.instance.share(
+      ShareParams(
+        files: filePaths.map((path) => XFile(path)).toList(),
+        text: text,
+        sharePositionOrigin:
+            box != null ? (box.localToGlobal(Offset.zero) & box.size) : null,
+      ),
     );
   }
 
@@ -63,9 +65,11 @@ class ShareUtils {
     try {
       // If file is provided, use the generic share (which will show WhatsApp as option)
       if (filePath != null) {
-        await Share.shareXFiles(
-          [XFile(filePath)],
-          text: message,
+        await SharePlus.instance.share(
+          ShareParams(
+            files: [XFile(filePath)],
+            text: message,
+          ),
         );
         return true;
       }
@@ -87,7 +91,11 @@ class ShareUtils {
 
       // If only message, share it (will show WhatsApp as option)
       if (message != null) {
-        await Share.share(message);
+        await SharePlus.instance.share(
+          ShareParams(
+            text: message,
+          ),
+        );
         return true;
       }
 

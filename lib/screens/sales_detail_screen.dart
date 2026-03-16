@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../utils/app_theme.dart';
+import '../widgets/app_state_views.dart';
 import '../providers/sales_detail_provider.dart';
 import '../providers/auth_provider.dart';
 import '../utils/phone_utils.dart';
@@ -8,6 +10,7 @@ import '../utils/format_utils.dart';
 import '../utils/dialog_utils.dart';
 import '../utils/pdf_utils.dart';
 import '../widgets/common_widgets.dart';
+import '../models/sales_detail.dart';
 
 class SalesDetailScreen extends ConsumerStatefulWidget {
   final DateTime billdate;
@@ -54,7 +57,7 @@ class _SalesDetailScreenState extends ConsumerState<SalesDetailScreen> {
               style: const TextStyle(fontWeight: FontWeight.w400, fontSize: 12),
             ),
             Text(
-              state.customerName!,
+              state.customerName ?? 'Customer',
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
             )
           ],
@@ -63,21 +66,19 @@ class _SalesDetailScreenState extends ConsumerState<SalesDetailScreen> {
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
-          if (state.customerPhone != null &&
-              state.customerPhone!.isNotEmpty) ...[
+          if ((state.customerPhone ?? '').isNotEmpty)
             IconButton(
               icon: const Icon(Icons.phone),
               tooltip: 'Call Customer',
               onPressed: () => _handlePhoneCall(state.customerPhone!),
             ),
-          ],
           IconButton(
             icon: const Icon(Icons.picture_as_pdf),
-            tooltip: 'Send PDF via WhatsApp',
             onPressed: () => _generateAndSharePDF(state),
           ),
         ],
       ),
+      backgroundColor: AppTheme.primaryColor,
       body: Center(
         child: ConstrainedBox(
           constraints: BoxConstraints(
@@ -86,9 +87,16 @@ class _SalesDetailScreenState extends ConsumerState<SalesDetailScreen> {
           child: state.isLoading
               ? const Center(child: CircularProgressIndicator())
               : state.error != null
-                  ? _ErrorView(error: state.error!, onRetry: _refresh)
+                  ? AppErrorView(
+                      message: state.error!,
+                      onRetry: _refresh,
+                      title: 'Error Loading Sales Details',
+                    )
                   : state.details.isEmpty
-                      ? const Center(child: Text('No details available'))
+                      ? const AppEmptyView(
+                          title: 'No Sales Details',
+                          message: 'No sales details found for this bill.',
+                        )
                       : _buildContent(
                           state, screenWidth > 600 ? 1200 : screenWidth),
         ),
@@ -99,27 +107,19 @@ class _SalesDetailScreenState extends ConsumerState<SalesDetailScreen> {
   Widget _buildContent(SalesDetailState state, double screenWidth) {
     return RefreshIndicator(
       onRefresh: _refresh,
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
+      child: ListView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Contact Numbers Card
-            _buildContactCard(state),
-
-            const SizedBox(height: 16),
-
-            // Items Card
-            _buildItemsCard(state),
-
-            const SizedBox(height: 16),
-
-            // Summary Card
-            _buildSummaryCard(state),
-
-            const SizedBox(height: 20),
-          ],
-        ),
+        children: [
+          // Contact Numbers Card
+          _buildContactCard(state),
+          const SizedBox(height: 16),
+          // Items Card
+          _buildItemsCard(state),
+          const SizedBox(height: 16),
+          // Summary Card
+          _buildSummaryCard(state),
+          const SizedBox(height: 20),
+        ],
       ),
     );
   }
@@ -157,7 +157,7 @@ class _SalesDetailScreenState extends ConsumerState<SalesDetailScreen> {
             Icon(
               Icons.phone,
               size: 16,
-              color: Colors.blue[700],
+              color: Colors.white, // White for colored backgrounds
             ),
             const SizedBox(width: 6),
             Text(
@@ -165,7 +165,7 @@ class _SalesDetailScreenState extends ConsumerState<SalesDetailScreen> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Colors.blue[700],
+                color: Colors.white, // White for colored backgrounds
               ),
             ),
           ],
@@ -206,7 +206,7 @@ class _SalesDetailScreenState extends ConsumerState<SalesDetailScreen> {
     );
   }
 
-  Widget _buildItemRow(item) {
+  Widget _buildItemRow(SalesDetail item) {
     final authState = ref.watch(authProvider);
     final userRole = authState.user?['role'] as String?;
     final isAdmin = userRole == 'admin';
@@ -810,75 +810,5 @@ class _SalesDetailScreenState extends ConsumerState<SalesDetailScreen> {
           billno: widget.billno,
           cuscod: widget.cuscod,
         );
-  }
-}
-
-class _ErrorView extends StatelessWidget {
-  final String error;
-  final VoidCallback onRetry;
-
-  const _ErrorView({required this.error, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: Colors.red[50],
-                shape: BoxShape.circle,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: Colors.red[400],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Oops! Something went wrong',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              error,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF667eea),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 16,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 4,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

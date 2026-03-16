@@ -1,7 +1,7 @@
 name: trial_balance_app
 description: Multi-company trial balance reporting app
 publish_to: 'none'
-version: 1.0.0+2
+version: 1.0.0+5
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -10,7 +10,8 @@ dependencies:
   flutter:
     sdk: flutter
 
-  flutter_riverpod: ^2.5.1
+  flutter_riverpod: ^3.3.1
+  riverpod: ^3.2.1
   http: ^1.1.2
   shared_preferences: ^2.2.2
   flutter_secure_storage: ^10.0.0
@@ -20,7 +21,7 @@ dependencies:
   fl_chart: ^1.1.1
   pdf: ^3.10.7
   printing: ^5.11.1
-  csv: ^5.0.2
+  csv: ^7.2.0
   path: ^1.8.3
   file_picker: ^10.3.8
   share_plus: ^12.0.1

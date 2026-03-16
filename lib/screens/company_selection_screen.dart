@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/company_provider.dart';
 import '../providers/auth_provider.dart';
 import '../utils/responsive_helper.dart';
-import 'trial_balance_screen.dart';
 import 'login_screen.dart';
+import 'trial_balance_screen.dart';
 
 class CompanySelectionScreen extends ConsumerStatefulWidget {
   const CompanySelectionScreen({super.key});
@@ -37,7 +37,10 @@ class _CompanySelectionScreenState
   }
 
   void _loadCompanies() {
-    Future.microtask(() => ref.read(companyProvider.notifier).fetchCompanies());
+    final userId = ref.read(authProvider).user?['user_id']?.toString();
+    Future.microtask(() => ref
+        .read(companyProvider.notifier)
+        .fetchCompanies(userId: userId));
   }
 
   Future<void> _viewTrialBalance() async {
@@ -54,22 +57,22 @@ class _CompanySelectionScreenState
       );
       return;
     }
-
-    await Navigator.of(context).push(
+    Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => TrialBalanceScreen(
-          companyIds: selectedCompanies.map((c) => c.fircod).toList(),
+          companyIds:
+              selectedCompanies.map((c) => c.fircod.toString()).toList(),
           startDate: _startDate,
           endDate: _endDate,
         ),
       ),
     );
-
-    if (mounted) _loadCompanies();
   }
 
   @override
   Widget build(BuildContext context) {
+    final selectedCompanies =
+        ref.watch(companyProvider.select((s) => s.selectedCompanies));
     final companyState = ref.watch(companyProvider);
     final isTabletOrLarger = !ResponsiveHelper.isMobile(context);
 
@@ -81,9 +84,8 @@ class _CompanySelectionScreenState
           children: [
             _DateRangeHeader(startDate: _startDate, endDate: _endDate),
             const Divider(height: 1),
-            if (companyState.selectedCompanies.isNotEmpty)
-              _SelectedCountBanner(
-                  count: companyState.selectedCompanies.length),
+            if (selectedCompanies.isNotEmpty)
+              _SelectedCountBanner(count: selectedCompanies.length),
             Expanded(
               child: isTabletOrLarger
                   ? _buildGridBody(companyState)
@@ -92,16 +94,16 @@ class _CompanySelectionScreenState
           ],
         ),
       ),
-      floatingActionButton: companyState.selectedCompanies.isNotEmpty
+      floatingActionButton: selectedCompanies.isNotEmpty
           ? _ViewReportButton(
-              count: companyState.selectedCompanies.length,
+              count: selectedCompanies.length,
               onPressed: _viewTrialBalance,
             )
           : null,
     );
   }
 
-  PreferredSizeWidget _buildAppBar(companyState) {
+  PreferredSizeWidget _buildAppBar(CompanyState companyState) {
     return AppBar(
       title: Text(
         'Select Companies',
@@ -120,13 +122,7 @@ class _CompanySelectionScreenState
               color: Colors.grey[800],
               size: ResponsiveHelper.getResponsiveIconSize(context, 18),
             ),
-            label: Text(
-              'Clear',
-              style: TextStyle(
-                color: Colors.grey[800],
-                fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
-              ),
-            ),
+            label: const Text('Clear'),
           ),
         IconButton(
           onPressed: () async {
@@ -149,7 +145,7 @@ class _CompanySelectionScreenState
     );
   }
 
-  Widget _buildListBody(companyState) {
+  Widget _buildListBody(CompanyState companyState) {
     if (companyState.isLoading) return const _LoadingView();
     if (companyState.error != null) {
       return _ErrorView(error: companyState.error!, onRetry: _loadCompanies);
@@ -163,7 +159,7 @@ class _CompanySelectionScreenState
     );
   }
 
-  Widget _buildGridBody(companyState) {
+  Widget _buildGridBody(CompanyState companyState) {
     if (companyState.isLoading) return const _LoadingView();
     if (companyState.error != null) {
       return _ErrorView(error: companyState.error!, onRetry: _loadCompanies);

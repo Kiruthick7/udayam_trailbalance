@@ -33,10 +33,25 @@ class AuthState {
   }
 }
 
-class AuthNotifier extends StateNotifier<AuthState> {
-  final ApiService api;
+class AuthNotifier extends Notifier<AuthState> {
+  /// UPDATE USER ID (internally, without logout)
+  Future<void> updateUserId(String newUserId) async {
+    // Update user_id in storage and in-memory state
+    final userData = await StorageService.getUserData();
+    if (userData != null) {
+      userData['user_id'] = newUserId;
+      await StorageService.saveUserData(userData);
+      state = state.copyWith(user: userData);
+    }
+  }
 
-  AuthNotifier(this.api) : super(AuthState());
+  late final ApiService api;
+
+  @override
+  AuthState build() {
+    api = ref.read(apiServiceProvider);
+    return AuthState();
+  }
 
   /// LOGIN
   Future<void> login(String email, String password) async {
@@ -45,7 +60,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final data = await api.login(email, password);
 
-      // ✅ NEW: store BOTH tokens
+      // NEW: store BOTH tokens
       await StorageService.saveTokens(
         accessToken: data['access_token'],
         refreshToken: data['refresh_token'],
@@ -85,9 +100,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
     final accessToken = await StorageService.getAccessToken();
 
     if (accessToken != null) {
-      // Restore user data from storage
       final userData = await StorageService.getUserData();
-
+      if (userData == null ||
+          (userData['user_id'] == null ||
+              userData['user_id'].toString().isEmpty)) {
+        await logout();
+        return;
+      }
       state = state.copyWith(
         isAuthenticated: true,
         user: userData,
@@ -117,6 +136,5 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 }
 
-final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  return AuthNotifier(ref.read(apiServiceProvider));
-});
+final authProvider =
+    NotifierProvider<AuthNotifier, AuthState>(() => AuthNotifier());

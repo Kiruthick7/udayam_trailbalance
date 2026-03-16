@@ -10,8 +10,9 @@ class ConnectivityService {
   Future<bool> hasInternetConnection() async {
     try {
       // First check if connected to network
-      final result = await _connectivity.checkConnectivity();
-      if (result == ConnectivityResult.none) {
+      final results = await _connectivity.checkConnectivity();
+
+      if (results.isEmpty || results.contains(ConnectivityResult.none)) {
         return false;
       }
 
@@ -20,7 +21,6 @@ class ConnectivityService {
         const Duration(seconds: 5),
         onTimeout: () => [],
       );
-
       return response.isNotEmpty && response[0].rawAddress.isNotEmpty;
     } catch (e) {
       return false;
@@ -29,8 +29,8 @@ class ConnectivityService {
 
   // Stream of connectivity changes
   Stream<bool> get connectivityStream {
-    return _connectivity.onConnectivityChanged.map((result) {
-      return result != ConnectivityResult.none;
+    return _connectivity.onConnectivityChanged.map((results) {
+      return !results.contains(ConnectivityResult.none);
     });
   }
 }

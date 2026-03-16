@@ -363,11 +363,12 @@ class PdfUtils {
   }) async {
     final box = context?.findRenderObject() as RenderBox?;
 
-    await Share.shareXFiles(
-      [XFile(file.path)],
-      text: shareText,
-      sharePositionOrigin:
-          box != null ? (box.localToGlobal(Offset.zero) & box.size) : null,
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path)],
+        text:shareText,
+        sharePositionOrigin: box != null ? (box.localToGlobal(Offset.zero) & box.size) : null,
+      ),
     );
   }
 

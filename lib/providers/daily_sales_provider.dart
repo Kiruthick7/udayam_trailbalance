@@ -60,12 +60,14 @@ class DailySalesState {
 }
 
 // StateNotifier for daily sales summary
-class DailySalesNotifier extends StateNotifier<DailySalesState> {
-  final ApiService _apiService;
-  final Ref _ref;
+class DailySalesNotifier extends Notifier<DailySalesState> {
+  late final ApiService _apiService;
 
-  DailySalesNotifier(this._apiService, this._ref)
-      : super(const DailySalesState());
+  @override
+  DailySalesState build() {
+    _apiService = ref.read(apiServiceProvider);
+    return const DailySalesState();
+  }
 
   Future<void> fetchDailySales([DateTime? date]) async {
     state = state.copyWith(isLoading: true, error: null);
@@ -89,7 +91,7 @@ class DailySalesNotifier extends StateNotifier<DailySalesState> {
     } catch (e) {
       // Check if auth error and logout
       if (ErrorHandler.isAuthError(e)) {
-        await _ref.read(authProvider.notifier).logout();
+        await ref.read(authProvider.notifier).logout();
       }
 
       state = state.copyWith(
@@ -108,9 +110,6 @@ class DailySalesNotifier extends StateNotifier<DailySalesState> {
   }
 }
 
-// Provider for daily sales summary
 final dailySalesProvider =
-    StateNotifierProvider<DailySalesNotifier, DailySalesState>((ref) {
-  final apiService = ApiService();
-  return DailySalesNotifier(apiService, ref);
-});
+    NotifierProvider<DailySalesNotifier, DailySalesState>(
+        () => DailySalesNotifier());

@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:trial_balance_app/providers/auth_provider.dart';
 import '../models/trial_balance.dart';
 import '../services/api_service.dart';
-import '../services/connectivity_service.dart';
 import '../utils/error_handler.dart';
 
 class TrialBalanceState {
@@ -33,14 +32,14 @@ class TrialBalanceState {
   }
 }
 
-class TrialBalanceNotifier extends StateNotifier<TrialBalanceState> {
-  final ApiService _apiService;
-  final ConnectivityService _connectivityService;
+class TrialBalanceNotifier extends Notifier<TrialBalanceState> {
+  late final ApiService _apiService;
 
-  TrialBalanceNotifier(
-    this._apiService,
-    this._connectivityService,
-  ) : super(TrialBalanceState());
+  @override
+  TrialBalanceState build() {
+    _apiService = ref.read(apiServiceProvider);
+    return TrialBalanceState();
+  }
 
   Future<void> fetchTrialBalance(
     List<String> companyIds,
@@ -49,16 +48,6 @@ class TrialBalanceNotifier extends StateNotifier<TrialBalanceState> {
     bool forceRefresh = false,
   }) async {
     state = state.copyWith(isLoading: true, error: null);
-
-    final hasInternet = await _connectivityService.hasInternetConnection();
-
-    if (!hasInternet) {
-      state = state.copyWith(
-        isLoading: false,
-        error: 'Network not connected. Please check your internet connection.',
-      );
-      return;
-    }
 
     try {
       final List<TrialBalanceReport> allReports = [];
@@ -99,9 +88,5 @@ class TrialBalanceNotifier extends StateNotifier<TrialBalanceState> {
 }
 
 final trialBalanceProvider =
-    StateNotifierProvider<TrialBalanceNotifier, TrialBalanceState>((ref) {
-  return TrialBalanceNotifier(
-    ref.watch(apiServiceProvider),
-    ref.watch(connectivityServiceProvider),
-  );
-});
+    NotifierProvider<TrialBalanceNotifier, TrialBalanceState>(
+        () => TrialBalanceNotifier());

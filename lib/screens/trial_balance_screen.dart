@@ -6,6 +6,8 @@ import '../services/connectivity_service.dart';
 import '../widgets/trial_balance_table.dart';
 import '../widgets/comparison_view.dart';
 import '../utils/responsive_helper.dart';
+import '../utils/app_theme.dart';
+import '../widgets/app_state_views.dart';
 
 class TrialBalanceScreen extends ConsumerStatefulWidget {
   final List<String> companyIds;
@@ -295,8 +297,7 @@ class _TrialBalanceScreenState extends ConsumerState<TrialBalanceScreen>
       appBar: AppBar(
         title: Text(
           'Trial Balance Report',
-          style: TextStyle(
-              fontSize: ResponsiveHelper.getResponsiveFontSize(context, 20)),
+          style: AppTheme.headline2,
         ),
         actions: [
           // Connectivity indicator
@@ -362,96 +363,28 @@ class _TrialBalanceScreenState extends ConsumerState<TrialBalanceScreen>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(color: Colors.green[700]),
+                  const CircularProgressIndicator(),
                   SizedBox(
                       height:
                           ResponsiveHelper.getResponsivePadding(context, 16)),
                   Text(
                     'Loading data...',
-                    style: TextStyle(
-                        fontSize: ResponsiveHelper.getResponsiveFontSize(
-                            context, 14)),
+                    style: AppTheme.bodyText,
                   ),
                 ],
               ),
             )
           : state.error != null
-              ? Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(
-                        ResponsiveHelper.getResponsivePadding(context, 24)),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.wifi_off,
-                          size: ResponsiveHelper.getResponsiveIconSize(
-                              context, 64),
-                          color: Colors.red[300],
-                        ),
-                        SizedBox(
-                            height: ResponsiveHelper.getResponsivePadding(
-                                context, 16)),
-                        Text(
-                          'Network Not Connected',
-                          style: TextStyle(
-                            fontSize: ResponsiveHelper.getResponsiveFontSize(
-                                context, 18),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(
-                            height: ResponsiveHelper.getResponsivePadding(
-                                context, 8)),
-                        Text(
-                          state.error!,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: ResponsiveHelper.getResponsiveFontSize(
-                                context, 14),
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        SizedBox(
-                            height: ResponsiveHelper.getResponsivePadding(
-                                context, 24)),
-                        ElevatedButton.icon(
-                          onPressed: _refresh,
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('Retry'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green[700],
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+              ? AppErrorView(
+                  message: state.error!,
+                  onRetry: _refresh,
+                  title: 'Error Loading Trial Balance',
                 )
               : state.reports.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.inbox,
-                            size: ResponsiveHelper.getResponsiveIconSize(
-                                context, 64),
-                            color: Colors.grey[400],
-                          ),
-                          SizedBox(
-                              height: ResponsiveHelper.getResponsivePadding(
-                                  context, 16)),
-                          Text(
-                            'No data available',
-                            style: TextStyle(
-                              fontSize: ResponsiveHelper.getResponsiveFontSize(
-                                  context, 16),
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
+                  ? const AppEmptyView(
+                      title: 'No Data Available',
+                      message:
+                          'No trial balance data found for the selected period.',
                     )
                   : TabBarView(
                       controller: _tabController,

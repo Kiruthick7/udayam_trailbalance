@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:csv/csv.dart';
+import 'package:csv/csv.dart' as csv;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:intl/intl.dart';
@@ -42,12 +42,14 @@ class ExportService {
     await file.writeAsBytes(output);
 
     // Share the PDF with position origin for iPad
-    await Share.shareXFiles(
-      [XFile(file.path)],
-      subject: 'Trial Balance Report',
-      text:
-          'Trial Balance Report - Generated on ${dateFormat.format(DateTime.now())}',
-      sharePositionOrigin: sharePositionOrigin,
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path)],
+        subject: 'Trial Balance Report',
+        text:
+            'Trial Balance Report - Generated on ${dateFormat.format(DateTime.now())}',
+        sharePositionOrigin: sharePositionOrigin,
+      ),
     );
   }
 
@@ -165,6 +167,7 @@ class ExportService {
         csvData.add(
             ['Period: ${report.period['start']} to ${report.period['end']}']);
         csvData.add([]);
+
         csvData.add([
           'Account Code',
           'Account Name',
@@ -189,18 +192,20 @@ class ExportService {
         csvData.add([]);
       }
 
-      final csv = const ListToCsvConverter().convert(csvData);
+      final csvString = const csv.CsvEncoder().convert(csvData);
       final directory = await getApplicationDocumentsDirectory();
       final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
       final file = File('${directory.path}/trial_balance_$timestamp.csv');
-      await file.writeAsString(csv);
+      await file.writeAsString(csvString);
 
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        subject: 'Trial Balance Report',
-        text:
-            'Trial Balance Report - Generated on ${dateFormat.format(DateTime.now())}',
-        sharePositionOrigin: sharePositionOrigin,
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          subject: 'Trial Balance Report',
+          text:
+              'Trial Balance Report - Generated on ${dateFormat.format(DateTime.now())}',
+          sharePositionOrigin: sharePositionOrigin,
+        ),
       );
     } catch (e) {
       throw Exception('Failed to export CSV: $e');

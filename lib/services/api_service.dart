@@ -10,11 +10,11 @@ class ApiService {
   late final Dio _dio;
 
   ApiService(
+      // Production: 'https://h32dbgnyv3.execute-api.ap-south-1.amazonaws.com'
+      // iOS Simulator: 'http://127.0.0.1:8000'
+      // Android Emulator: 'http://10.0.2.2:8000'
+      // Physical Device: Use your Mac's IP, e.g., 'http://192.168.1.100:8000'
       {String baseUrl =
-          // Production: 'https://h32dbgnyv3.execute-api.ap-south-1.amazonaws.com'
-          // iOS Simulator: 'http://127.0.0.1:8000'
-          // Android Emulator: 'http://10.0.2.2:8000'
-          // Physical Device: Use your Mac's IP, e.g., 'http://192.168.1.100:8000'
           'https://h32dbgnyv3.execute-api.ap-south-1.amazonaws.com'}) {
     _dio = Dio(
       BaseOptions(
@@ -26,13 +26,17 @@ class ApiService {
     _dio.interceptors.add(AuthInterceptor(_dio));
   }
 
-  Future<Map<String, dynamic>> login(String email, String password) async {
+  Future<Map<String, dynamic>> login(String email, String password,
+      {String? userId}) async {
     final response = await _dio.post(
       '/auth/login',
-      data: {'email': email, 'password': password},
+      data: {
+        'email': email,
+        'password': password,
+        if (userId != null) 'user_id': userId,
+      },
       options: Options(headers: {'Authorization': null}),
     );
-
     return response.data;
   }
 
@@ -46,9 +50,18 @@ class ApiService {
     return response.data;
   }
 
-  Future<List<Company>> getCompanies() async {
+  Future<List<Company>> getCompanies({String? userId}) async {
     final response = await _dio.get('/api/companies');
-    return (response.data as List).map((e) => Company.fromJson(e)).toList();
+    final companies =
+        (response.data as List).map((e) => Company.fromJson(e)).toList();
+    if (userId == null || userId.isEmpty) {
+      return companies;
+    } else {
+      final trimmedUserId = userId.trim();
+      return companies
+          .where((c) => c.fircodId.trim() == trimmedUserId)
+          .toList();
+    }
   }
 
   Future<List<TrialBalanceReport>> getTrialBalance(
@@ -56,15 +69,15 @@ class ApiService {
     DateTime startDate,
     DateTime endDate,
   ) async {
+    final payload = {
+      'companyIds': companyIds,
+      'startDate': startDate.toIso8601String().split('T')[0],
+      'endDate': endDate.toIso8601String().split('T')[0],
+    };
     final response = await _dio.post(
       '/api/trial-balance',
-      data: {
-        'companyIds': companyIds,
-        'startDate': startDate.toIso8601String().split('T')[0],
-        'endDate': endDate.toIso8601String().split('T')[0],
-      },
+      data: payload,
     );
-
     return (response.data['companies'] as List)
         .map((e) => TrialBalanceReport.fromJson(e))
         .toList();
@@ -75,14 +88,15 @@ class ApiService {
     DateTime startDate,
     DateTime endDate,
   ) async {
+    final payload = {
+      'companyIds': companyIds,
+      'startDate': startDate.toIso8601String().split('T')[0],
+      'endDate': endDate.toIso8601String().split('T')[0],
+    };
     final response = await _dio.post(
       '/api/trial-balance-store',
       options: Options(headers: {'Authorization': null}),
-      data: {
-        'companyIds': companyIds,
-        'startDate': startDate.toIso8601String().split('T')[0],
-        'endDate': endDate.toIso8601String().split('T')[0],
-      },
+      data: payload,
     );
     return (response.data['companies'] as List)
         .map((e) => TrialBalanceReport.fromJson(e))

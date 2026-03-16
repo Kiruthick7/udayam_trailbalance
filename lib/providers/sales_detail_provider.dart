@@ -102,10 +102,14 @@ class SalesDetailState {
   }
 }
 
-class SalesDetailNotifier extends StateNotifier<SalesDetailState> {
-  final ApiService _apiService;
+class SalesDetailNotifier extends Notifier<SalesDetailState> {
+  late final ApiService _apiService;
 
-  SalesDetailNotifier(this._apiService) : super(SalesDetailState());
+  @override
+  SalesDetailState build() {
+    _apiService = ref.read(apiServiceProvider);
+    return SalesDetailState();
+  }
 
   Future<void> fetchSalesDetails({
     required DateTime billdate,
@@ -155,6 +159,5 @@ class SalesDetailNotifier extends StateNotifier<SalesDetailState> {
 }
 
 final salesDetailProvider =
-    StateNotifierProvider<SalesDetailNotifier, SalesDetailState>((ref) {
-  return SalesDetailNotifier(ref.read(apiServiceProvider));
-});
+    NotifierProvider<SalesDetailNotifier, SalesDetailState>(
+        () => SalesDetailNotifier());

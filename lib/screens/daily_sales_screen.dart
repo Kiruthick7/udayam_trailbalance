@@ -4,7 +4,8 @@ import 'package:intl/intl.dart';
 import '../providers/daily_sales_provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/daily_sales_summary.dart';
-import '../widgets/error_snackbar.dart';
+import '../utils/app_theme.dart';
+import '../widgets/app_state_views.dart';
 import 'sales_detail_screen.dart';
 
 class DailySalesScreen extends ConsumerStatefulWidget {
@@ -47,14 +48,6 @@ class _DailySalesScreenState extends ConsumerState<DailySalesScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
-    // Show error snackbar if there's an error
-    if (state.error != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ErrorSnackbar.show(context, state.error!);
-        ref.read(dailySalesProvider.notifier).clearError();
-      });
-    }
-
     return Scaffold(
       appBar: AppBar(
         title: Column(
@@ -63,20 +56,17 @@ class _DailySalesScreenState extends ConsumerState<DailySalesScreen> {
           children: [
             Text(
               _isToday(selectedDate) ? "Today's Sales" : "Sales Report",
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: AppTheme.headline2,
             ),
             Text(
               DateFormat('EEEE, dd MMM yyyy').format(selectedDate),
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
-              ),
+              style: AppTheme.caption,
             ),
           ],
         ),
+        backgroundColor: AppTheme.accentColor,
+        foregroundColor: Colors.white,
+        elevation: 2,
         actions: [
           IconButton(
             icon: const Icon(Icons.calendar_today),
@@ -105,29 +95,45 @@ class _DailySalesScreenState extends ConsumerState<DailySalesScreen> {
                 .fetchDailySales(selectedDate),
             child: state.isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : state.salesList.isEmpty
-                    ? _buildEmptyView()
-                    : Column(
-                        children: [
-                          _buildSummaryCard(
-                              state, screenWidth > 600 ? 1200 : screenWidth),
-                          Expanded(
-                            child: ListView.builder(
-                              padding: EdgeInsets.all(
-                                  (screenWidth > 600 ? 1200 : screenWidth) *
-                                      0.04),
-                              itemCount: state.salesList.length,
-                              itemBuilder: (context, index) {
-                                return _buildSalesCard(
-                                  state.salesList[index],
-                                  screenWidth > 600 ? 1200 : screenWidth,
-                                  screenHeight,
-                                );
-                              },
-                            ),
+                : state.error != null
+                    ? AppErrorView(
+                        message: state.error!,
+                        onRetry: () => ref
+                            .read(dailySalesProvider.notifier)
+                            .fetchDailySales(selectedDate),
+                        title: 'Error Loading Sales',
+                      )
+                    : state.salesList.isEmpty
+                        ? AppEmptyView(
+                            title: _isToday(selectedDate)
+                                ? 'No sales today'
+                                : 'No sales on this date',
+                            message: _isToday(selectedDate)
+                                ? 'Orders placed today will appear here'
+                                : 'No orders were placed on this date',
+                            icon: Icons.shopping_cart_outlined,
+                          )
+                        : Column(
+                            children: [
+                              _buildSummaryCard(state,
+                                  screenWidth > 600 ? 1200 : screenWidth),
+                              Expanded(
+                                child: ListView.builder(
+                                  padding: EdgeInsets.all(
+                                      (screenWidth > 600 ? 1200 : screenWidth) *
+                                          0.04),
+                                  itemCount: state.salesList.length,
+                                  itemBuilder: (context, index) {
+                                    return _buildSalesCard(
+                                      state.salesList[index],
+                                      screenWidth > 600 ? 1200 : screenWidth,
+                                      screenHeight,
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
           ),
         ),
       ),
@@ -139,40 +145,6 @@ class _DailySalesScreenState extends ConsumerState<DailySalesScreen> {
     return date.year == now.year &&
         date.month == now.month &&
         date.day == now.day;
-  }
-
-  Widget _buildEmptyView() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.shopping_cart_outlined,
-            size: 100,
-            color: Colors.grey[300],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            _isToday(selectedDate) ? 'No sales today' : 'No sales on this date',
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _isToday(selectedDate)
-                ? 'Orders placed today will appear here'
-                : 'No orders were placed on this date',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildSummaryCard(DailySalesState state, double screenWidth) {

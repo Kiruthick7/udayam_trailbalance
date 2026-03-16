@@ -31,15 +31,19 @@ class CompanyState {
       companies.where((c) => c.isSelected).toList();
 }
 
-class CompanyNotifier extends StateNotifier<CompanyState> {
-  final ApiService api;
+class CompanyNotifier extends Notifier<CompanyState> {
+  late final ApiService api;
 
-  CompanyNotifier(this.api) : super(CompanyState());
+  @override
+  CompanyState build() {
+    api = ref.read(apiServiceProvider);
+    return CompanyState();
+  }
 
-  Future<void> fetchCompanies() async {
+  Future<void> fetchCompanies({String? userId}) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final companies = await api.getCompanies();
+      final companies = await api.getCompanies(userId: userId);
       state = state.copyWith(isLoading: false, companies: companies);
     } catch (e) {
       final errorMessage = ErrorHandler.getErrorMessage(e);
@@ -65,6 +69,4 @@ class CompanyNotifier extends StateNotifier<CompanyState> {
 }
 
 final companyProvider =
-    StateNotifierProvider<CompanyNotifier, CompanyState>((ref) {
-  return CompanyNotifier(ref.read(apiServiceProvider));
-});
+    NotifierProvider<CompanyNotifier, CompanyState>(() => CompanyNotifier());

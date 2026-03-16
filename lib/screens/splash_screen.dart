@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
+import '../utils/app_theme.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
 
@@ -42,7 +43,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.primary,
+      backgroundColor: AppTheme.primaryColor,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -75,8 +76,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.green[600]!,
-                            Colors.green[400]!,
+                            AppTheme.primaryColor,
+                            AppTheme.primaryColor.withValues(alpha: 0.7),
                           ],
                         ),
                         shape: BoxShape.circle,
@@ -93,22 +94,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             ),
             const SizedBox(height: 24),
             // App Name
-            const Text(
+            Text(
               'Udayam',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                letterSpacing: 1.2,
-              ),
+              style: AppTheme.headline1.copyWith(color: Colors.white),
             ),
             const SizedBox(height: 8),
             Text(
               'Trial Balance',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.white.withValues(alpha: 0.8),
-              ),
+              style: AppTheme.bodyText.copyWith(color: Colors.white70),
             ),
             const SizedBox(height: 48),
             // Loading Indicator

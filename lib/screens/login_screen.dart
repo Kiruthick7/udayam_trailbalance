@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../utils/responsive_helper.dart';
+import '../utils/app_theme.dart';
+import '../widgets/app_state_views.dart';
 import 'home_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -202,13 +204,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                       context, 24)),
                               Text(
                                 'Welcome Udayam',
-                                style: TextStyle(
-                                  fontSize:
-                                      ResponsiveHelper.getResponsiveFontSize(
-                                          context, 32),
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey[800],
-                                ),
+                                style: AppTheme.headline1,
                                 textAlign: TextAlign.center,
                               ),
                               SizedBox(
@@ -216,12 +212,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                       context, 8)),
                               Text(
                                 'Sign in to access your trial balance reports',
-                                style: TextStyle(
-                                  fontSize:
-                                      ResponsiveHelper.getResponsiveFontSize(
-                                          context, 14),
-                                  color: Colors.grey[600],
-                                ),
+                                style: AppTheme.bodyText,
                                 textAlign: TextAlign.center,
                               ),
                               SizedBox(
@@ -480,44 +471,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                     height:
                                         ResponsiveHelper.getResponsivePadding(
                                             context, 20)),
-                                Container(
-                                  padding: EdgeInsets.all(
-                                    ResponsiveHelper.getResponsivePadding(
-                                        context, 12),
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red[50],
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: Colors.red[200]!,
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.error_outline,
-                                        color: Colors.red[700],
-                                        size: ResponsiveHelper
-                                            .getResponsiveIconSize(context, 20),
-                                      ),
-                                      SizedBox(
-                                          width: ResponsiveHelper
-                                              .getResponsivePadding(
-                                                  context, 8)),
-                                      Expanded(
-                                        child: Text(
-                                          authState.error!,
-                                          style: TextStyle(
-                                            color: Colors.red[700],
-                                            fontSize: ResponsiveHelper
-                                                .getResponsiveFontSize(
-                                                    context, 14),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                AppErrorView(
+                                  message: authState.error!,
+                                  onRetry: _handleLogin,
+                                  title: 'Login Failed',
                                 ),
                               ],
                             ],

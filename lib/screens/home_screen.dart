@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
+import '../utils/app_theme.dart';
 import 'company_selection_screen.dart';
 import 'daily_sales_screen.dart';
 import 'login_screen.dart';
@@ -15,8 +16,8 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Udayam'),
-        backgroundColor: Colors.blue[700],
+        title: Text('Udayam', style: AppTheme.headline2),
+        backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
         elevation: 2,
         actions: [
@@ -58,15 +59,15 @@ class HomeScreen extends ConsumerWidget {
                     Card(
                       elevation: 2,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.all(24),
                         child: Row(
                           children: [
                             CircleAvatar(
                               radius: 30,
-                              backgroundColor: Colors.blue[700],
+                              backgroundColor: AppTheme.primaryColor,
                               child: Text(
                                 (authState.user?['USERNAME'] as String?)
                                         ?.substring(0, 1)
@@ -87,22 +88,16 @@ class HomeScreen extends ConsumerWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
+                                  Text(
                                     'Welcome back!',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.grey,
-                                    ),
+                                    style: AppTheme.bodyText,
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     authState.user?['username'] ??
                                         authState.user?['email'] ??
                                         '',
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    style: AppTheme.headline2,
                                   ),
                                   const SizedBox(height: 4),
                                   Container(
@@ -140,53 +135,76 @@ class HomeScreen extends ConsumerWidget {
                     // Menu Section
                     Text(
                       'Quick Access',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[800],
-                      ),
+                      style: AppTheme.headline2,
                     ),
                     const SizedBox(height: 16),
 
                     // Menu Items
                     Expanded(
-                      child: ListView(
-                        children: [
-                          // Trial Balance - Only for Admin
-                          if (userRole == 'admin')
-                            _MenuCard(
-                              icon: Icons.account_balance,
-                              title: 'Trial Balance',
-                              subtitle: 'View financial reports and statements',
-                              color: Colors.blue[700]!,
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        const CompanySelectionScreen(),
-                                  ),
-                                );
-                              },
-                            ),
-
-                          if (userRole == 'admin') const SizedBox(height: 16),
-
-                          // Daily Sales - For both Admin and Staff
-                          _MenuCard(
-                            icon: Icons.receipt_long,
-                            title: 'Daily Sales Bills',
-                            subtitle:
-                                'View today\'s sales and customer details',
-                            color: Colors.green[700]!,
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => const DailySalesScreen(),
+                      child: ListView.builder(
+                        itemCount: userRole == 'admin' ? 3 : 1,
+                        itemBuilder: (context, index) {
+                          if (userRole == 'admin') {
+                            if (index == 0) {
+                              return RepaintBoundary(
+                                child: _MenuCard(
+                                  icon: Icons.account_balance,
+                                  title: 'Trial Balance',
+                                  subtitle:
+                                      'View financial reports and statements',
+                                  color: Colors.blue[700]!,
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            const CompanySelectionScreen(),
+                                      ),
+                                    );
+                                  },
                                 ),
                               );
-                            },
-                          ),
-                        ],
+                            } else if (index == 1) {
+                              return const SizedBox(height: 16);
+                            } else if (index == 2) {
+                              return RepaintBoundary(
+                                child: _MenuCard(
+                                  icon: Icons.receipt_long,
+                                  title: 'Daily Sales Bills',
+                                  subtitle:
+                                      'View today\'s sales and customer details',
+                                  color: Colors.green[700]!,
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            const DailySalesScreen(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              );
+                            }
+                          } else {
+                            // Only Daily Sales for non-admin
+                            return RepaintBoundary(
+                              child: _MenuCard(
+                                icon: Icons.receipt_long,
+                                title: 'Daily Sales Bills',
+                                subtitle:
+                                    'View today\'s sales and customer details',
+                                color: Colors.green[700]!,
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => const DailySalesScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
                       ),
                     ),
                   ],

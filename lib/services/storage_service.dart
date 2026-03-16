@@ -2,6 +2,15 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
 
 class StorageService {
+    /// Update only the user_id field in stored user data
+    static Future<void> updateUserId(String newUserId) async {
+      final data = await _storage.read(key: _userDataKey);
+      if (data != null) {
+        final userData = json.decode(data) as Map<String, dynamic>;
+        userData['user_id'] = newUserId;
+        await _storage.write(key: _userDataKey, value: json.encode(userData));
+      }
+    }
   static const _storage = FlutterSecureStorage();
 
   static const _accessTokenKey = 'access_token';
