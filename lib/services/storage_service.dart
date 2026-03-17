@@ -2,15 +2,39 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
 
 class StorageService {
-    /// Update only the user_id field in stored user data
-    static Future<void> updateUserId(String newUserId) async {
-      final data = await _storage.read(key: _userDataKey);
-      if (data != null) {
-        final userData = json.decode(data) as Map<String, dynamic>;
-        userData['user_id'] = newUserId;
-        await _storage.write(key: _userDataKey, value: json.encode(userData));
-      }
+  static const _pinKey = 'user_pin';
+
+  static Future<void> savePin(String pin) async {
+    await _storage.write(key: _pinKey, value: pin);
+  }
+
+  static Future<String?> getPin() async {
+    return await _storage.read(key: _pinKey);
+  }
+
+  static Future<bool> hasPin() async {
+    return (await getPin()) != null;
+  }
+
+  static Future<void> clearPin() async {
+    await _storage.delete(key: _pinKey);
+  }
+
+  static Future<bool> verifyPin(String input) async {
+    final pin = await getPin();
+    return pin == input;
+  }
+
+  /// Update only the user_id field in stored user data
+  static Future<void> updateUserId(String newUserId) async {
+    final data = await _storage.read(key: _userDataKey);
+    if (data != null) {
+      final userData = json.decode(data) as Map<String, dynamic>;
+      userData['user_id'] = newUserId;
+      await _storage.write(key: _userDataKey, value: json.encode(userData));
     }
+  }
+
   static const _storage = FlutterSecureStorage();
 
   static const _accessTokenKey = 'access_token';

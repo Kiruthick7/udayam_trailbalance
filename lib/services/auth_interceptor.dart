@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import '../services/storage_service.dart';
-import '../main.dart';
+import '../core/navigation_service.dart';
 import '../screens/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
@@ -189,7 +189,7 @@ class AuthInterceptor extends Interceptor {
 
   /// Navigate to login screen when session expires
   void _navigateToLogin() {
-    final context = navigatorKey.currentContext;
+    final context = NavigationService.navigatorKey.currentContext;
     if (context != null) {
       // Show session expired message
       WidgetsBinding.instance.addPostFrameCallback((_) {

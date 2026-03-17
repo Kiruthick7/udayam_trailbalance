@@ -9,6 +9,7 @@ import '../utils/phone_utils.dart';
 import '../utils/format_utils.dart';
 import '../utils/dialog_utils.dart';
 import '../utils/pdf_utils.dart';
+import '../services/api_service.dart';
 import '../widgets/common_widgets.dart';
 import '../models/sales_detail.dart';
 
@@ -741,66 +742,60 @@ class _SalesDetailScreenState extends ConsumerState<SalesDetailScreen> {
   }
 
   Future<void> _generateAndSharePDF(SalesDetailState state) async {
+    if (!mounted) return;
+
+    DialogUtils.showLoadingDialog(context, message: 'Generating PDF...');
+
+    PendingBillSummary? pendingSummary;
+
     try {
-      // Show loading dialog
-      if (mounted) {
-        DialogUtils.showLoadingDialog(context, message: 'Generating PDF...');
-      }
+      final api = ApiService();
 
-      // Prepare invoice data
-      final invoiceData = InvoiceData(
-        title: 'INVOICE',
-        billNumber: widget.billno.toString(),
-        billDate: widget.billdate,
-        customerName: state.customerName,
-        customerAddress: state.customerAddress,
-        customerPhone: state.customerPhone,
-        items: state.details
-            .map((item) => InvoiceItem(
-                  name: item.name,
-                  quantity: item.qty,
-                  rate: item.rate,
-                  amount: item.tprice,
-                ))
-            .toList(),
-        totalQuantity: state.totalQuantity,
-        netAmount: state.netAmount,
-        footer: 'Thank you for your business!',
+      pendingSummary = await api.getCustomerPendingBills(
+        cuscod: widget.cuscod,
+        mfdate: widget.billdate,
       );
 
-      // Generate and share PDF
-      final success = await PdfUtils.generateAndShareInvoice(
-        context: context,
-        data: invoiceData,
-      );
+      if (!mounted) return; // ✅ ADD THIS
+    } catch (_) {
+      pendingSummary = null;
+    }
 
-      // Close loading dialog
-      if (mounted) {
-        DialogUtils.hideLoadingDialog(context);
-      }
+    final invoiceData = InvoiceData(
+      title: 'INVOICE',
+      billNumber: widget.billno.toString(),
+      billDate: widget.billdate,
+      customerName: state.customerName,
+      customerAddress: state.customerAddress,
+      customerPhone: state.customerPhone,
+      items: state.details
+          .map((item) => InvoiceItem(
+                name: item.name,
+                quantity: item.qty,
+                rate: item.rate,
+                amount: item.tprice,
+              ))
+          .toList(),
+      totalQuantity: state.totalQuantity,
+      netAmount: state.netAmount,
+      footer: 'Thank you for your business!',
+      pendingBills: pendingSummary?.pendingBills,
+      pendingTotalBalance: pendingSummary?.totalBalance,
+    );
 
-      if (mounted) {
-        if (success) {
-          DialogUtils.showSuccessSnackbar(
-            context,
-            'PDF generated successfully!',
-          );
-        } else {
-          DialogUtils.showErrorSnackbar(
-            context,
-            'Failed to generate PDF',
-          );
-        }
-      }
-    } catch (e) {
-      // Close loading dialog if open
-      if (mounted) {
-        DialogUtils.hideLoadingDialog(context);
-        DialogUtils.showErrorSnackbar(
-          context,
-          'Failed to generate PDF: $e',
-        );
-      }
+    final success = await PdfUtils.generateAndShareInvoice(
+      context: context,
+      data: invoiceData,
+    );
+
+    if (!mounted) return; // ✅ ADD THIS
+
+    DialogUtils.hideLoadingDialog(context);
+
+    if (success) {
+      DialogUtils.showSuccessSnackbar(context, 'PDF generated successfully!');
+    } else {
+      DialogUtils.showErrorSnackbar(context, 'Failed to generate PDF');
     }
   }
 

@@ -38,9 +38,8 @@ class _CompanySelectionScreenState
 
   void _loadCompanies() {
     final userId = ref.read(authProvider).user?['user_id']?.toString();
-    Future.microtask(() => ref
-        .read(companyProvider.notifier)
-        .fetchCompanies(userId: userId));
+    Future.microtask(() =>
+        ref.read(companyProvider.notifier).fetchCompanies(userId: userId));
   }
 
   Future<void> _viewTrialBalance() async {
@@ -574,12 +573,14 @@ class _ViewReportButton extends StatelessWidget {
       icon: Icon(
         Icons.assessment,
         size: ResponsiveHelper.getResponsiveIconSize(context, 24),
+        color: Colors.white,
       ),
       label: Text(
         'View Report ($count)',
         style: TextStyle(
           fontWeight: FontWeight.w600,
           fontSize: ResponsiveHelper.getResponsiveFontSize(context, 14),
+          color: Colors.white,
         ),
       ),
     );

@@ -13,6 +13,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
     final userRole = authState.user?['role'] as String?;
+    final userId = authState.user?['user_id']?.toString();
 
     return Scaffold(
       appBar: AppBar(
@@ -138,75 +139,77 @@ class HomeScreen extends ConsumerWidget {
                       style: AppTheme.headline2,
                     ),
                     const SizedBox(height: 16),
-
                     // Menu Items
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: userRole == 'admin' ? 3 : 1,
-                        itemBuilder: (context, index) {
-                          if (userRole == 'admin') {
-                            if (index == 0) {
-                              return RepaintBoundary(
-                                child: _MenuCard(
-                                  icon: Icons.account_balance,
-                                  title: 'Trial Balance',
-                                  subtitle:
-                                      'View financial reports and statements',
-                                  color: Colors.blue[700]!,
-                                  onTap: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            const CompanySelectionScreen(),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              );
-                            } else if (index == 1) {
-                              return const SizedBox(height: 16);
-                            } else if (index == 2) {
-                              return RepaintBoundary(
-                                child: _MenuCard(
-                                  icon: Icons.receipt_long,
-                                  title: 'Daily Sales Bills',
-                                  subtitle:
-                                      'View today\'s sales and customer details',
-                                  color: Colors.green[700]!,
-                                  onTap: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            const DailySalesScreen(),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              );
-                            }
-                          } else {
-                            // Only Daily Sales for non-admin
-                            return RepaintBoundary(
-                              child: _MenuCard(
-                                icon: Icons.receipt_long,
-                                title: 'Daily Sales Bills',
-                                subtitle:
-                                    'View today\'s sales and customer details',
-                                color: Colors.green[700]!,
-                                onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => const DailySalesScreen(),
-                                    ),
-                                  );
-                                },
+                    if (userId != null && userId.isNotEmpty)
+                      RepaintBoundary(
+                        child: _MenuCard(
+                          icon: Icons.account_balance,
+                          title: 'Trial Balance',
+                          subtitle: 'View financial reports and statements',
+                          color: Colors.blue[700]!,
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const CompanySelectionScreen(),
                               ),
                             );
-                          }
-                          return const SizedBox.shrink();
-                        },
+                          },
+                        ),
+                      )
+                    else if (userRole == 'admin')
+                      Column(
+                        children: [
+                          RepaintBoundary(
+                            child: _MenuCard(
+                              icon: Icons.account_balance,
+                              title: 'Trial Balance',
+                              subtitle: 'View financial reports and statements',
+                              color: Colors.blue[700]!,
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const CompanySelectionScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          RepaintBoundary(
+                            child: _MenuCard(
+                              icon: Icons.receipt_long,
+                              title: 'Daily Sales Bills',
+                              subtitle:
+                                  'View today\'s sales and customer details',
+                              color: Colors.green[700]!,
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const DailySalesScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      RepaintBoundary(
+                        child: _MenuCard(
+                          icon: Icons.receipt_long,
+                          title: 'Daily Sales Bills',
+                          subtitle: 'View today\'s sales and customer details',
+                          color: Colors.green[700]!,
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const DailySalesScreen(),
+                              ),
+                            );
+                          },
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),

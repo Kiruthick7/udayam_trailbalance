@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:trial_balance_app/screens/splash_screen.dart';
 import '../providers/auth_provider.dart';
 import '../utils/responsive_helper.dart';
 import '../utils/app_theme.dart';
 import '../widgets/app_state_views.dart';
-import 'home_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -15,9 +15,8 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen>
     with SingleTickerProviderStateMixin {
-  final _emailController =
-      TextEditingController(text: 'udayamvellore@yahoo.com');
-  final _passwordController = TextEditingController(text: 'Admin%1234#');
+  final _emailController = TextEditingController(text: '');
+  final _passwordController = TextEditingController(text: '');
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
   late AnimationController _animationController;
@@ -72,7 +71,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>
-                const HomeScreen(),
+                SplashScreen(),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
               return FadeTransition(opacity: animation, child: child);
@@ -277,6 +276,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                           context, 16),
                                 ),
                                 keyboardType: TextInputType.emailAddress,
+                                textCapitalization: TextCapitalization.none,
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
                                     return 'Please enter your email';
@@ -363,6 +363,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                       ResponsiveHelper.getResponsiveFontSize(
                                           context, 16),
                                 ),
+                                keyboardType: TextInputType.text,
+                                textCapitalization: TextCapitalization.characters,
                                 obscureText: _obscurePassword,
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {

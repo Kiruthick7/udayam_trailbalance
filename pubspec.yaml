@@ -1,7 +1,7 @@
 name: trial_balance_app
 description: Multi-company trial balance reporting app
 publish_to: 'none'
-version: 1.0.0+5
+version: 1.0.0+8
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -28,12 +28,19 @@ dependencies:
   dio: ^5.9.0
   url_launcher: ^6.3.2
   path_provider: ^2.1.5
+  logger: ^2.7.0
+  flutter_shake_animated: ^0.0.5
+  device_info_plus: ^12.3.0
+  package_info_plus: ^9.0.0
+
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.0
+
 
 flutter_launcher_icons:
   android: true
@@ -41,6 +48,9 @@ flutter_launcher_icons:
   image_path: assets/icon/app_icon.png
   adaptive_icon_background: "#ffffff"
   adaptive_icon_foreground: assets/icon/app_icon.png
+
+flutter_native_splash:
+  # See flutter_native_splash.yaml for configuration
 
 flutter:
   uses-material-design: true

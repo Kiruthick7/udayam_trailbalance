@@ -191,3 +191,27 @@ Refer to `FLUTTER_PRODUCTION_READINESS_REPORT.md` for complete checklist.
 - [AWS Security Guide](AWS_SECURITY_GUIDE.md) - AWS Secrets Manager setup
 - [Production Readiness Report](FLUTTER_PRODUCTION_READINESS_REPORT.md) - Pre-release checklist
 - [Secrets List](SECRETS_LIST.md) - AWS secrets configuration
+
+---
+
+# Privacy Policy
+
+This repository hosts the privacy policy for the Udayam Trial Balance mobile application.
+
+## 📄 View the Privacy Policy
+- [privacy_policy.md](privacy_policy.md)
+
+## 🌐 How to Publish on GitHub Pages
+1. Fork or clone this repository.
+2. Make sure `privacy_policy.md` is in the root or `/docs` folder.
+3. Go to **Settings > Pages** in your GitHub repository.
+4. Set the source branch (e.g., `main`) and folder (root or `/docs`).
+5. After a few minutes, your policy will be live at:
+   - `https://<your-github-username>.github.io/<repo-name>/privacy_policy.md`
+
+## 📲 Use in App Store / Play Store
+- Copy the public URL and paste it in the Privacy Policy field of your app listing.
+
+---
+
+For questions, contact: your@email.com

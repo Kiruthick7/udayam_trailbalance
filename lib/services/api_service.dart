@@ -5,8 +5,69 @@ import '../models/sales_detail.dart';
 import '../models/daily_sales_summary.dart';
 import '../services/auth_interceptor.dart';
 import '../services/storage_service.dart';
+import '../core/dio_custom_retry_interceptor.dart';
+
+// Pending bill models
+class PendingBill {
+  final String cuscod;
+  final int bilnum;
+  final DateTime bildat;
+  final double debit;
+  final double credit;
+  final double balance;
+
+  PendingBill({
+    required this.cuscod,
+    required this.bilnum,
+    required this.bildat,
+    required this.debit,
+    required this.credit,
+    required this.balance,
+  });
+
+  factory PendingBill.fromJson(Map<String, dynamic> json) {
+    return PendingBill(
+      cuscod: json['cuscod'] as String,
+      bilnum: json['bilnum'] as int,
+      bildat: DateTime.parse(json['bildat'] as String),
+      debit: (json['debit'] as num).toDouble(),
+      credit: (json['credit'] as num).toDouble(),
+      balance: (json['balance'] as num).toDouble(),
+    );
+  }
+}
+
+class PendingBillSummary {
+  final List<PendingBill> pendingBills;
+  final double totalBalance;
+
+  PendingBillSummary({
+    required this.pendingBills,
+    required this.totalBalance,
+  });
+
+  factory PendingBillSummary.fromJson(Map<String, dynamic> json) {
+    return PendingBillSummary(
+      pendingBills: (json['pending_bills'] as List)
+          .map((e) => PendingBill.fromJson(e))
+          .toList(),
+      totalBalance: (json['total_balance'] as num).toDouble(),
+    );
+  }
+}
 
 class ApiService {
+  /// Checks if the backend session is valid (user is authenticated)
+  /// Uses /auth-check/check endpoint for session validity.
+  Future<bool> isSessionValid() async {
+    try {
+      final response = await _dio.get('/auth-check/check');
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
   late final Dio _dio;
 
   ApiService(
@@ -24,6 +85,8 @@ class ApiService {
     );
 
     _dio.interceptors.add(AuthInterceptor(_dio));
+    _dio.interceptors.add(CustomRetryInterceptor(
+        dio: _dio, maxRetries: 3, retryDelay: Duration(seconds: 2)));
   }
 
   Future<Map<String, dynamic>> login(String email, String password,
@@ -157,6 +220,26 @@ class ApiService {
       // ignore server errors on logout
     } finally {
       await StorageService.clearAll();
+    }
+  }
+
+  /// Fetch customer pending bills as of a date
+  Future<PendingBillSummary> getCustomerPendingBills({
+    required String cuscod,
+    required DateTime mfdate,
+  }) async {
+    final params = {
+      'cuscod': cuscod,
+      'mfdate': _formatDate(mfdate),
+    };
+    try {
+      final response = await _dio.get(
+        '/api/customer-pending-bills',
+        queryParameters: params,
+      );
+      return PendingBillSummary.fromJson(response.data);
+    } catch (e) {
+      rethrow;
     }
   }
 }

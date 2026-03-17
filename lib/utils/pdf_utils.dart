@@ -7,6 +7,8 @@ import 'package:share_plus/share_plus.dart';
 import 'format_utils.dart';
 
 /// Data model for invoice/bill PDF
+import '../services/api_service.dart';
+
 class InvoiceData {
   final String title;
   final String billNumber;
@@ -18,6 +20,8 @@ class InvoiceData {
   final double totalQuantity;
   final double netAmount;
   final String? footer;
+  final List<PendingBill>? pendingBills;
+  final double? pendingTotalBalance;
 
   InvoiceData({
     this.title = 'INVOICE',
@@ -30,6 +34,8 @@ class InvoiceData {
     required this.totalQuantity,
     required this.netAmount,
     this.footer,
+    this.pendingBills,
+    this.pendingTotalBalance,
   });
 }
 
@@ -79,6 +85,14 @@ class PdfUtils {
               // Items Table
               _buildItemsTable(data.items),
               pw.SizedBox(height: 24),
+
+              // Pending Bills Table (if any)
+              if (data.pendingBills != null &&
+                  data.pendingBills!.isNotEmpty) ...[
+                PdfUtils._buildPendingBillsSection(
+                    data.pendingBills!, data.pendingTotalBalance ?? 0),
+                pw.SizedBox(height: 24),
+              ],
 
               // Summary
               _buildSummarySection(data),
@@ -251,9 +265,17 @@ class PdfUtils {
     String text, {
     bool isHeader = false,
     pw.TextAlign align = pw.TextAlign.left,
+    double verticalPadding = 8,
+    double? left,
+    double? right,
   }) {
     return pw.Padding(
-      padding: const pw.EdgeInsets.all(8),
+      padding: pw.EdgeInsets.only(
+        left: left ?? 8,
+        right: right ?? 8,
+        top: verticalPadding,
+        bottom: verticalPadding,
+      ),
       child: pw.Text(
         text,
         style: isHeader ? pw.TextStyle(fontWeight: pw.FontWeight.bold) : null,
@@ -366,8 +388,9 @@ class PdfUtils {
     await SharePlus.instance.share(
       ShareParams(
         files: [XFile(file.path)],
-        text:shareText,
-        sharePositionOrigin: box != null ? (box.localToGlobal(Offset.zero) & box.size) : null,
+        text: shareText,
+        sharePositionOrigin:
+            box != null ? (box.localToGlobal(Offset.zero) & box.size) : null,
       ),
     );
   }
@@ -410,6 +433,211 @@ class PdfUtils {
       }
     } catch (e) {
       // Silently fail - not critical
+    }
+  }
+
+  /// Build pending bills section
+  static pw.Widget _buildPendingBillsSection(
+      List<PendingBill> bills, double totalBalance) {
+    if (bills.length == 1) {
+      // Single bill: print only one side (3 columns)
+      return pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            'Pending Bills',
+            style: pw.TextStyle(
+              fontSize: 13,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColor.fromHex('#eab308'),
+            ),
+          ),
+          pw.SizedBox(height: 2),
+          pw.Table(
+            border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+            columnWidths: {
+              0: const pw.FlexColumnWidth(2),
+              1: const pw.FlexColumnWidth(1.5),
+              2: const pw.FlexColumnWidth(2),
+            },
+            children: [
+              pw.TableRow(
+                decoration:
+                    pw.BoxDecoration(color: PdfColor.fromHex('#fef9c3')),
+                children: [
+                  _buildTableCell('Bill Date',
+                      isHeader: true, verticalPadding: 4, left: 2),
+                  _buildTableCell('Bill No',
+                      isHeader: true, verticalPadding: 2, left: 2, right: 2),
+                  _buildTableCell('Balance',
+                      isHeader: true,
+                      align: pw.TextAlign.right,
+                      verticalPadding: 2,
+                      left: 2,
+                      right: 0),
+                ],
+              ),
+              pw.TableRow(
+                children: [
+                  _buildTableCell(FormatUtils.formatDate(bills[0].bildat),
+                      verticalPadding: 1, left: 2),
+                  _buildTableCell(bills[0].bilnum.toString(),
+                      verticalPadding: 1, left: 2, right: 2),
+                  _buildTableCell(
+                      'Rs. ${FormatUtils.formatDecimal(bills[0].balance)}',
+                      align: pw.TextAlign.right,
+                      verticalPadding: 1,
+                      left: 2,
+                      right: 0),
+                ],
+              ),
+            ],
+          ),
+          pw.SizedBox(height: 2),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.end,
+            children: [
+              pw.Text(
+                'Total Pending Balance: ',
+                style:
+                    pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11),
+              ),
+              pw.Text(
+                'Rs. ${FormatUtils.formatDecimal(totalBalance)}',
+                style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 11,
+                    color: PdfColor.fromHex('#eab308')),
+              ),
+            ],
+          ),
+        ],
+      );
+    } else {
+      // Prepare rows for two-column layout
+      final rows = <List<PendingBill?>>[];
+      for (int i = 0; i < bills.length; i += 2) {
+        rows.add([
+          bills[i],
+          (i + 1 < bills.length) ? bills[i + 1] : null,
+        ]);
+      }
+      return pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            'Pending Bills',
+            style: pw.TextStyle(
+              fontSize: 13,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColor.fromHex('#eab308'),
+            ),
+          ),
+          pw.SizedBox(height: 2),
+          pw.Table(
+            border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+            columnWidths: {
+              0: const pw.FlexColumnWidth(2),
+              1: const pw.FlexColumnWidth(1.5),
+              2: const pw.FlexColumnWidth(2),
+              3: const pw.FlexColumnWidth(0.5), // gap
+              4: const pw.FlexColumnWidth(2),
+              5: const pw.FlexColumnWidth(1.5),
+              6: const pw.FlexColumnWidth(2),
+            },
+            children: [
+              pw.TableRow(
+                decoration:
+                    pw.BoxDecoration(color: PdfColor.fromHex('#fef9c3')),
+                children: [
+                  _buildTableCell('Bill Date',
+                      isHeader: true, verticalPadding: 4, left: 2),
+                  _buildTableCell('Bill No',
+                      isHeader: true, verticalPadding: 2, left: 2, right: 2),
+                  _buildTableCell('Balance',
+                      isHeader: true,
+                      align: pw.TextAlign.right,
+                      verticalPadding: 2,
+                      left: 2,
+                      right: 0),
+                  pw.Container(), // gap
+                  _buildTableCell('Bill Date',
+                      isHeader: true, verticalPadding: 4, left: 2),
+                  _buildTableCell('Bill No',
+                      isHeader: true, verticalPadding: 2, left: 2, right: 2),
+                  _buildTableCell('Balance',
+                      isHeader: true,
+                      align: pw.TextAlign.right,
+                      verticalPadding: 2,
+                      left: 2,
+                      right: 0),
+                ],
+              ),
+              ...rows.map((pair) => pw.TableRow(
+                    children: [
+                      // First bill
+                      pair[0] != null
+                          ? _buildTableCell(
+                              FormatUtils.formatDate(pair[0]!.bildat),
+                              verticalPadding: 1,
+                              left: 2)
+                          : pw.Container(),
+                      pair[0] != null
+                          ? _buildTableCell(pair[0]!.bilnum.toString(),
+                              verticalPadding: 1, left: 2, right: 2)
+                          : pw.Container(),
+                      pair[0] != null
+                          ? _buildTableCell(
+                              'Rs. ${FormatUtils.formatDecimal(pair[0]!.balance)}',
+                              align: pw.TextAlign.right,
+                              verticalPadding: 1,
+                              left: 2,
+                              right: 0)
+                          : pw.Container(),
+                      pw.Container(), // gap
+                      // Second bill (if exists)
+                      pair[1] != null
+                          ? _buildTableCell(
+                              FormatUtils.formatDate(pair[1]!.bildat),
+                              verticalPadding: 1,
+                              left: 2)
+                          : pw.Container(),
+                      pair[1] != null
+                          ? _buildTableCell(pair[1]!.bilnum.toString(),
+                              verticalPadding: 1, left: 2, right: 2)
+                          : pw.Container(),
+                      pair[1] != null
+                          ? _buildTableCell(
+                              'Rs. ${FormatUtils.formatDecimal(pair[1]!.balance)}',
+                              align: pw.TextAlign.right,
+                              verticalPadding: 1,
+                              left: 2,
+                              right: 0)
+                          : pw.Container(),
+                    ],
+                  )),
+            ],
+          ),
+          pw.SizedBox(height: 2),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.end,
+            children: [
+              pw.Text(
+                'Total Pending Balance: ',
+                style:
+                    pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11),
+              ),
+              pw.Text(
+                'Rs. ${FormatUtils.formatDecimal(totalBalance)}',
+                style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 11,
+                    color: PdfColor.fromHex('#eab308')),
+              ),
+            ],
+          ),
+        ],
+      );
     }
   }
 }

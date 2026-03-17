@@ -1,14 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'screens/splash_screen.dart';
 import 'services/token_refresh_service.dart';
 import 'dart:async';
-
-// Global navigator key for navigation from anywhere (e.g., interceptors)
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+import 'core/navigation_service.dart';
+import 'core/crash_reporter.dart';
+import 'core/device_app_info.dart';
 
 void main() {
-  runApp(const ProviderScope(child: MyApp()));
+  runZonedGuarded(() {
+    FlutterError.onError = (FlutterErrorDetails details) async {
+      FlutterError.presentError(details);
+      final extra = await getDeviceAppInfo();
+      CrashReporter.send(details.exception, details.stack, extra);
+    };
+    runApp(const ProviderScope(child: MyApp()));
+  }, (error, stack) async {
+    final extra = await getDeviceAppInfo();
+    CrashReporter.send(error, stack, extra);
+  });
 }
 
 class MyApp extends ConsumerStatefulWidget {
@@ -53,7 +64,7 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      navigatorKey: navigatorKey,
+      navigatorKey: NavigationService.navigatorKey,
       title: 'Udayam TB',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
