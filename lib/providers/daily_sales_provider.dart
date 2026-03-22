@@ -73,26 +73,65 @@ class DailySalesNotifier extends Notifier<DailySalesState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      // Fetch both sales list and profit/loss data in parallel
-      final results = await Future.wait([
-        _apiService.getCurrentDayCustomerSales(date),
-        _apiService.getProfitLoss(date),
-      ]);
+      final authState = ref.read(authProvider);
+      final userRole = authState.user?['role'] as String?;
+      final userId = authState.user?['user_id']?.toString();
 
-      final salesList = results[0] as List<DailySalesSummary>;
-      final profitLoss = results[1] as Map<String, double>;
+      if (userRole == 'admin') {
+        // Admin: fetch all bills
+        final results = await Future.wait([
+          _apiService.getCurrentDayCustomerSales(date: date),
+          _apiService.getProfitLoss(date),
+        ]);
+        final dynamic salesMapRaw = results[0];
+        final profitLoss = results[1] as Map<String, double>;
 
-      state = state.copyWith(
-        salesList: salesList,
-        totalProfit: profitLoss['total_profit'] ?? 0.0,
-        totalLoss: profitLoss['total_loss'] ?? 0.0,
-        isLoading: false,
-      );
+        List<DailySalesSummary> regularSales = [];
+        List<DailySalesSummary> shopSales = [];
+        if (salesMapRaw is Map) {
+          if (salesMapRaw['regular_sales'] is List<DailySalesSummary>) {
+            regularSales = salesMapRaw['regular_sales'];
+          } else if (salesMapRaw['regular_sales'] is List) {
+            regularSales =
+                List<DailySalesSummary>.from(salesMapRaw['regular_sales']);
+          }
+          if (salesMapRaw['shop_sales'] is List<DailySalesSummary>) {
+            shopSales = salesMapRaw['shop_sales'];
+          } else if (salesMapRaw['shop_sales'] is List) {
+            shopSales = List<DailySalesSummary>.from(salesMapRaw['shop_sales']);
+          }
+        }
+
+        final allSales = [
+          ...regularSales,
+          ...shopSales,
+        ];
+        state = state.copyWith(
+          salesList: allSales,
+          totalProfit: profitLoss['total_profit'] ?? 0.0,
+          totalLoss: profitLoss['total_loss'] ?? 0.0,
+          isLoading: false,
+        );
+      } else {
+        // Staff: fetch only their bills
+        final salesList = await _apiService.getCurrentDayCustomerSalesShop(
+          date: date,
+          userId: userId,
+        );
+        state = state.copyWith(
+          salesList: salesList,
+          totalProfit: 0.0,
+          totalLoss: 0.0,
+          isLoading: false,
+        );
+      }
     } catch (e) {
       // Check if auth error and logout
       if (ErrorHandler.isAuthError(e)) {
         await ref.read(authProvider.notifier).logout();
       }
+
+      // ...existing code...
 
       state = state.copyWith(
         isLoading: false,

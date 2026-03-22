@@ -26,6 +26,7 @@ class AuthInterceptor extends Interceptor {
     final token = await StorageService.getAccessToken();
     if (token != null) {
       options.headers['Authorization'] = 'Bearer $token';
+    } else {
     }
     handler.next(options);
   }
@@ -57,6 +58,7 @@ class AuthInterceptor extends Interceptor {
         );
 
         _isRefreshing = false;
+      } else {
       }
     } catch (e) {
       _isRefreshing = false;
@@ -141,12 +143,12 @@ class AuthInterceptor extends Interceptor {
           options: Options(headers: {'Authorization': null}),
         );
 
-        await StorageService.saveTokens(
-          accessToken: response.data['access_token'],
-          refreshToken: response.data['refresh_token'],
-        );
+          await StorageService.saveTokens(
+            accessToken: response.data['access_token'],
+            refreshToken: response.data['refresh_token'],
+          );
 
-        final newAccessToken = await StorageService.getAccessToken();
+          final newAccessToken = await StorageService.getAccessToken();
 
         // Retry queued requests
         for (final req in _queue) {
@@ -159,10 +161,10 @@ class AuthInterceptor extends Interceptor {
         }
         _queue.clear();
 
-        // Retry the original request
-        requestOptions.headers['Authorization'] = 'Bearer $newAccessToken';
+          // Retry the original request
+          requestOptions.headers['Authorization'] = 'Bearer $newAccessToken';
 
-        _isRefreshing = false;
+          _isRefreshing = false;
 
         // Automatically retry the request without showing error to user
         try {

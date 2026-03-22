@@ -2,29 +2,6 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
 
 class StorageService {
-  static const _pinKey = 'user_pin';
-
-  static Future<void> savePin(String pin) async {
-    await _storage.write(key: _pinKey, value: pin);
-  }
-
-  static Future<String?> getPin() async {
-    return await _storage.read(key: _pinKey);
-  }
-
-  static Future<bool> hasPin() async {
-    return (await getPin()) != null;
-  }
-
-  static Future<void> clearPin() async {
-    await _storage.delete(key: _pinKey);
-  }
-
-  static Future<bool> verifyPin(String input) async {
-    final pin = await getPin();
-    return pin == input;
-  }
-
   /// Update only the user_id field in stored user data
   static Future<void> updateUserId(String newUserId) async {
     final data = await _storage.read(key: _userDataKey);
@@ -62,11 +39,13 @@ class StorageService {
   }
 
   static Future<String?> getAccessToken() async {
-    return await _storage.read(key: _accessTokenKey);
+    final token = await _storage.read(key: _accessTokenKey);
+    return token;
   }
 
   static Future<String?> getRefreshToken() async {
-    return await _storage.read(key: _refreshTokenKey);
+    final token = await _storage.read(key: _refreshTokenKey);
+    return token;
   }
 
   static Future<void> clearAll() async {

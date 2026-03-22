@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:trial_balance_app/screens/pin_setup_screen.dart';
-import 'package:trial_balance_app/services/storage_service.dart';
 import '../providers/auth_provider.dart';
 import '../utils/app_theme.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
-import 'pin_entry_screen.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -31,73 +28,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     if (!mounted) return;
     final authState = ref.read(authProvider);
     if (authState.isAuthenticated) {
-      final hasPin = await StorageService.hasPin();
-      if (!mounted) return;
-      final isSessionValid =
-          await ref.read(apiServiceProvider).isSessionValid();
-      if (!isSessionValid) {
-        await StorageService.clearPin();
-        if (!mounted) return;
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-        );
-        return;
-      }
-      if (!hasPin) {
-        if (!mounted) return;
-
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => PinSetupScreen(
-              onPinSet: () {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (!mounted) return;
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (_) => const HomeScreen()),
-                  );
-                });
-              },
-            ),
-          ),
-        );
-        return;
-      } else {
-        // Log removed
-        final authNotifierForCallback = ref.read(authProvider.notifier);
-        if (!mounted) return;
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => PinEntryScreen(
-              onPinVerified: () async {
-                final refreshed = await authNotifierForCallback.refreshToken();
-                if (!mounted) return;
-                if (refreshed) {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (_) => const HomeScreen()),
-                  );
-                } else {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  );
-                }
-              },
-              onFailed: () async {
-                await authNotifierForCallback.logout();
-                if (!mounted) return;
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                );
-              },
-            ),
-          ),
-        );
-        return;
-      }
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
+      return;
     }
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => const LoginScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
     );
   }
 

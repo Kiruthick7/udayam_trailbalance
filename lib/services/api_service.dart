@@ -166,14 +166,56 @@ class ApiService {
         .toList();
   }
 
-  Future<List<DailySalesSummary>> getCurrentDayCustomerSales(
-      [DateTime? date]) async {
-    final queryParams = date != null ? {'date': _formatDate(date)} : null;
+  /// For admin: returns a map with 'regular_sales' and 'shop_sales' lists
+  Future<Map<String, List<DailySalesSummary>>> getCurrentDayCustomerSales({
+    DateTime? date,
+  }) async {
+    final queryParams = <String, dynamic>{};
+    if (date != null) queryParams['date'] = _formatDate(date);
     final response = await _dio.get(
       '/api/current-day-customer-sales',
-      queryParameters: queryParams,
+      queryParameters: queryParams.isNotEmpty ? queryParams : null,
     );
+    final data = response.data;
 
+    if (data is! Map) {
+      throw Exception('Unexpected backend response: ${data.runtimeType}');
+    }
+
+    // Defensive: ensure both keys exist and are lists
+    final regularSalesRaw =
+        (data['regular_sales'] is List) ? data['regular_sales'] : [];
+    final shopSalesRaw = (data['shop_sales'] is List) ? data['shop_sales'] : [];
+
+    // Parse each list safely
+    final regularSales = regularSalesRaw
+        .map<DailySalesSummary>(
+            (e) => DailySalesSummary.fromJson(e as Map<String, dynamic>))
+        .toList();
+    final shopSales = shopSalesRaw
+        .map<DailySalesSummary>(
+            (e) => DailySalesSummary.fromJson(e as Map<String, dynamic>))
+        .toList();
+
+    // Return as expected by provider
+    return {
+      'regular_sales': regularSales,
+      'shop_sales': shopSales,
+    };
+  }
+
+  /// For staff: returns only shop sales filtered by user_id
+  Future<List<DailySalesSummary>> getCurrentDayCustomerSalesShop({
+    DateTime? date,
+    String? userId,
+  }) async {
+    final queryParams = <String, dynamic>{};
+    if (date != null) queryParams['date'] = _formatDate(date);
+    if (userId != null) queryParams['user_id'] = userId;
+    final response = await _dio.get(
+      '/api/current-day-customer-sales-shop',
+      queryParameters: queryParams.isNotEmpty ? queryParams : null,
+    );
     return (response.data as List)
         .map((e) => DailySalesSummary.fromJson(e))
         .toList();
@@ -201,16 +243,21 @@ class ApiService {
     int billno,
     String cuscod,
   ) async {
-    final response = await _dio.post(
-      '/api/sales-details',
-      data: {
-        'billdate': billdate.toIso8601String().split('T')[0],
-        'billno': billno,
-        'cuscod': cuscod,
-      },
-    );
-
-    return (response.data as List).map((e) => SalesDetail.fromJson(e)).toList();
+    try {
+      final response = await _dio.post(
+        '/api/sales-details',
+        data: {
+          'billdate': billdate.toIso8601String().split('T')[0],
+          'billno': billno,
+          'cuscod': cuscod,
+        },
+      );
+      return (response.data as List)
+          .map((e) => SalesDetail.fromJson(e))
+          .toList();
+    } catch (e) {
+      rethrow;
+    }
   }
 
   Future<void> logout() async {
