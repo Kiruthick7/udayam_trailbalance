@@ -83,9 +83,12 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   /// LOGOUT
-  Future<void> logout() async {
+  Future<void> logout({bool revokeServerToken = true}) async {
     try {
-      await api.logout(); // optional backend revoke
+      if (revokeServerToken) {
+        // Avoid blocking UI flows (like app startup) on network issues.
+        await api.logout().timeout(const Duration(seconds: 5));
+      }
     } catch (_) {
       // ignore
     } finally {
@@ -100,7 +103,9 @@ class AuthNotifier extends Notifier<AuthState> {
     if (accessToken != null) {
       final userData = await StorageService.getUserData();
       if (userData == null) {
-        await logout(); // Clear tokens if user data is missing
+        await logout(
+          revokeServerToken: false,
+        ); // Startup must not wait on network
         return;
       }
       state = state.copyWith(
@@ -108,7 +113,9 @@ class AuthNotifier extends Notifier<AuthState> {
         user: userData,
       );
     } else {
-      await logout(); // Clear any residual data if tokens are missing
+      await logout(
+        revokeServerToken: false,
+      ); // Startup must not wait on network
     }
   }
 

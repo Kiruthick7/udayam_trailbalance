@@ -16,13 +16,24 @@ class CompanySelectionScreen extends ConsumerStatefulWidget {
 
 class _CompanySelectionScreenState
     extends ConsumerState<CompanySelectionScreen> {
-  final DateTime _startDate = DateTime(2025, 4, 1);
+  late final DateTime _startDate = _getFinancialYearStart(DateTime.now());
+  late final DateTime _endDate = _getFinancialYearEnd(DateTime.now());
 
-  late final DateTime _endDate = DateTime(
-    DateTime.now().year,
-    DateTime.now().month,
-    DateTime.now().day,
-  );
+  DateTime _getFinancialYearStart(DateTime currentDate) {
+    final aprilFirstThisYear = DateTime(currentDate.year, 4, 1);
+    if (!currentDate.isBefore(aprilFirstThisYear)) {
+      return aprilFirstThisYear;
+    }
+    return DateTime(currentDate.year - 1, 4, 1);
+  }
+
+  DateTime _getFinancialYearEnd(DateTime currentDate) {
+    final aprilFirstThisYear = DateTime(currentDate.year, 4, 1);
+    if (!currentDate.isBefore(aprilFirstThisYear)) {
+      return DateTime(currentDate.year + 1, 3, 31);
+    }
+    return DateTime(currentDate.year, 3, 31);
+  }
 
   String formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/'
@@ -234,7 +245,7 @@ class _DateRangeHeader extends StatelessWidget {
                 SizedBox(
                     height: ResponsiveHelper.getResponsivePadding(context, 4)),
                 Text(
-                  '01/04/2025 - ${endDate.day.toString().padLeft(2, '0')}/${endDate.month.toString().padLeft(2, '0')}/${endDate.year}',
+                  '${startDate.day.toString().padLeft(2, '0')}/${startDate.month.toString().padLeft(2, '0')}/${startDate.year} - ${endDate.day.toString().padLeft(2, '0')}/${endDate.month.toString().padLeft(2, '0')}/${endDate.year}',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize:

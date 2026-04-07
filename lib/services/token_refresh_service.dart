@@ -1,42 +1,88 @@
 import 'dart:convert';
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import '../screens/login_screen.dart';
 import 'storage_service.dart';
 import 'api_service.dart';
 
 /// Service to handle automatic token refresh
 class TokenRefreshService {
   static bool _isRefreshing = false;
+  static Completer<void>? _refreshCompleter;
 
-  /// Check if access token is expired or about to expire, and refresh if needed
-  static Future<void> checkAndRefreshToken() async {
+  /// Centralized token refresh with retry and user feedback
+  static Future<void> checkAndRefreshToken({BuildContext? context}) async {
     if (_isRefreshing) {
+      await _refreshCompleter?.future;
       return;
     }
-
+    _isRefreshing = true;
+    _refreshCompleter = Completer<void>();
     try {
       final accessToken = await StorageService.getAccessToken();
       final refreshToken = await StorageService.getRefreshToken();
 
       if (accessToken == null || refreshToken == null) {
+        _isRefreshing = false;
+        _refreshCompleter?.complete();
         return;
       }
 
       // Decode JWT to check expiry
       if (_isTokenExpiringSoon(accessToken)) {
-        _isRefreshing = true;
-
         final apiService = ApiService();
-        final data = await apiService.refreshToken(refreshToken);
-
-        await StorageService.saveTokens(
-          accessToken: data['access_token'],
-          refreshToken: data['refresh_token'],
-        );
-
-        _isRefreshing = false;
+        int retry = 0;
+        const maxRetries = 2;
+        while (retry <= maxRetries) {
+          try {
+            final data = await apiService.refreshToken(refreshToken);
+            await StorageService.saveTokens(
+              accessToken: data['access_token'],
+              refreshToken: data['refresh_token'],
+            );
+            _isRefreshing = false;
+            _refreshCompleter?.complete();
+            return;
+          } catch (e) {
+            // If refresh token expired or invalid, force logout and show message
+            if (e is DioException && e.response?.statusCode == 401) {
+              await StorageService.clearAll();
+              if (context != null) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Session expired. Please log in again.'),
+                      backgroundColor: Colors.orange,
+                      duration: Duration(seconds: 3),
+                    ),
+                  );
+                });
+                // ignore: use_build_context_synchronously
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
+              }
+              _isRefreshing = false;
+              _refreshCompleter?.complete();
+              return;
+            }
+            // Retry on network error
+            if (retry < maxRetries) {
+              retry++;
+              await Future.delayed(const Duration(seconds: 2));
+              continue;
+            } else {
+              // Give up after retries
+              break;
+            }
+          }
+        }
       }
-    } catch (e) {
+    } finally {
       _isRefreshing = false;
-      // Silent fail - the auth interceptor will handle it on next API call
+      _refreshCompleter?.complete();
     }
   }
 

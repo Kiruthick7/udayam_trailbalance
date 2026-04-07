@@ -37,9 +37,9 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    // Set up periodic token refresh check every 3 minutes
+    // Set up periodic token refresh check every 1 minute (more frequent)
     _tokenRefreshTimer = Timer.periodic(
-      const Duration(minutes: 3),
+      const Duration(minutes: 1),
       (_) => TokenRefreshService.checkAndRefreshToken(),
     );
   }

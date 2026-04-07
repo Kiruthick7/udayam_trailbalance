@@ -2,13 +2,11 @@ import 'package:dio/dio.dart';
 import '../services/storage_service.dart';
 import '../core/navigation_service.dart';
 import '../screens/login_screen.dart';
+import 'token_refresh_service.dart';
 import 'package:flutter/material.dart';
-import 'dart:convert';
 
 class AuthInterceptor extends Interceptor {
   final Dio dio;
-  bool _isRefreshing = false;
-  final List<RequestOptions> _queue = [];
 
   AuthInterceptor(this.dio);
 
@@ -20,77 +18,15 @@ class AuthInterceptor extends Interceptor {
     // Check and refresh token before making the request
     if (!options.path.contains('/auth/login') &&
         !options.path.contains('/auth/refresh')) {
-      await _checkAndRefreshTokenIfNeeded();
+      await TokenRefreshService.checkAndRefreshToken(
+          context: NavigationService.navigatorKey.currentContext);
     }
 
     final token = await StorageService.getAccessToken();
     if (token != null) {
       options.headers['Authorization'] = 'Bearer $token';
-    } else {
     }
     handler.next(options);
-  }
-
-  /// Check if token needs refresh before making request
-  Future<void> _checkAndRefreshTokenIfNeeded() async {
-    if (_isRefreshing) return;
-
-    try {
-      final accessToken = await StorageService.getAccessToken();
-      if (accessToken == null) return;
-
-      // Decode JWT to check if expiring within 2 minutes
-      if (_isTokenExpiringSoon(accessToken)) {
-        final refreshToken = await StorageService.getRefreshToken();
-        if (refreshToken == null) return;
-
-        _isRefreshing = true;
-
-        final response = await dio.post(
-          '/auth/refresh',
-          data: {'refresh_token': refreshToken},
-          options: Options(headers: {'Authorization': null}),
-        );
-
-        await StorageService.saveTokens(
-          accessToken: response.data['access_token'],
-          refreshToken: response.data['refresh_token'],
-        );
-
-        _isRefreshing = false;
-      } else {
-      }
-    } catch (e) {
-      _isRefreshing = false;
-    }
-  }
-
-  /// Check if token is expiring within 2 minutes
-  bool _isTokenExpiringSoon(String token) {
-    try {
-      final parts = token.split('.');
-      if (parts.length != 3) return true;
-
-      final payload = parts[1];
-      final normalized = payload.padRight(
-        (payload.length + 3) ~/ 4 * 4,
-        '=',
-      );
-      final decoded = utf8.decode(base64.decode(normalized));
-      final payloadMap = json.decode(decoded) as Map<String, dynamic>;
-
-      final exp = payloadMap['exp'] as int?;
-      if (exp == null) return true;
-
-      final expiryDate = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
-      final now = DateTime.now();
-
-      // Refresh if expiring within 2 minutes
-      return expiryDate.isBefore(now.add(const Duration(minutes: 2)));
-    } catch (e) {
-      // If decoding fails, assume token is expiring to trigger refresh
-      return true;
-    }
   }
 
   @override
@@ -121,69 +57,26 @@ class AuthInterceptor extends Interceptor {
         return handler.next(err);
       }
 
-      if (_isRefreshing) {
-        _queue.add(requestOptions);
-        return;
-      }
+      // Use centralized refresh logic
+      await TokenRefreshService.checkAndRefreshToken(
+          context: NavigationService.navigatorKey.currentContext);
 
-      _isRefreshing = true;
-
-      final refreshToken = await StorageService.getRefreshToken();
-      if (refreshToken == null) {
-        _isRefreshing = false;
-        await StorageService.clearAll();
-        _navigateToLogin();
-        return handler.next(err);
-      }
-
-      try {
-        final response = await dio.post(
-          '/auth/refresh',
-          data: {'refresh_token': refreshToken},
-          options: Options(headers: {'Authorization': null}),
-        );
-
-          await StorageService.saveTokens(
-            accessToken: response.data['access_token'],
-            refreshToken: response.data['refresh_token'],
-          );
-
-          final newAccessToken = await StorageService.getAccessToken();
-
-        // Retry queued requests
-        for (final req in _queue) {
-          req.headers['Authorization'] = 'Bearer $newAccessToken';
-          try {
-            await dio.fetch(req);
-          } catch (e) {
-            // Ignore errors from queued requests
-          }
-        }
-        _queue.clear();
-
-          // Retry the original request
-          requestOptions.headers['Authorization'] = 'Bearer $newAccessToken';
-
-          _isRefreshing = false;
-
-        // Automatically retry the request without showing error to user
+      final newAccessToken = await StorageService.getAccessToken();
+      if (newAccessToken != null) {
+        // Retry the original request with new token
+        requestOptions.headers['Authorization'] = 'Bearer $newAccessToken';
         try {
           final retryResponse = await dio.fetch(requestOptions);
           return handler.resolve(retryResponse);
         } catch (retryError) {
-          return handler.next(err);
+          // If retry fails, fall through to logout
         }
-      } catch (refreshError) {
-        // Token refresh failed - clear storage and redirect to login
-        _isRefreshing = false;
-        _queue.clear();
-        await StorageService.clearAll();
-
-        // Navigate to login screen
-        _navigateToLogin();
-
-        return handler.next(err);
       }
+
+      // If refresh failed, clear storage and redirect to login
+      await StorageService.clearAll();
+      _navigateToLogin();
+      return handler.next(err);
     }
 
     handler.next(err);
