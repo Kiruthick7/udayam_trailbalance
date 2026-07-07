@@ -185,22 +185,22 @@ class ApiService {
     // Defensive: ensure both keys exist and are lists
     final regularSalesRaw =
         (data['regular_sales'] is List) ? data['regular_sales'] : [];
-    final shopSalesRaw = (data['shop_sales'] is List) ? data['shop_sales'] : [];
+    // final shopSalesRaw = (data['shop_sales'] is List) ? data['shop_sales'] : [];
 
     // Parse each list safely
     final regularSales = regularSalesRaw
         .map<DailySalesSummary>(
             (e) => DailySalesSummary.fromJson(e as Map<String, dynamic>))
         .toList();
-    final shopSales = shopSalesRaw
-        .map<DailySalesSummary>(
-            (e) => DailySalesSummary.fromJson(e as Map<String, dynamic>))
-        .toList();
+    // final shopSales = shopSalesRaw
+    //     .map<DailySalesSummary>(
+    //         (e) => DailySalesSummary.fromJson(e as Map<String, dynamic>))
+    //     .toList();
 
     // Return as expected by provider
     return {
       'regular_sales': regularSales,
-      'shop_sales': shopSales,
+      // 'shop_sales': shopSales,
     };
   }
 
